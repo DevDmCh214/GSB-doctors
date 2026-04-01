@@ -118,8 +118,8 @@ Do not add anything not shown. Do not change styling once it matches."
 - [x] `NavbarComponent` (shows nom/prenom when logged in, connexion/inscription when not)
 
 ### Frontend — Pages
-- [ ] `/login` page wired to `POST /api/auth/login`
-- [ ] `/register` page wired to `POST /api/auth/register`
+- [x] `/login` page wired to `POST /api/auth/login`
+- [x] `/register` page wired to `POST /api/auth/register`
 - [ ] `/` dashboard — left panel medecins suivis
 - [ ] `/` dashboard — right panel mes rapports (search + sort)
 - [ ] `/medecins` list — search bar + Mon département toggle + cards grid
@@ -156,6 +156,7 @@ Do not add anything not shown. Do not change styling once it matches."
 2026-04-01 — Auth middleware + all 4 auth routes built and verified with curl (login, me, wrong-password 401, logout, me-after-logout 401).
 2026-04-01 — All backend routes built and verified: medecins, rapports (CRUD), medicaments, dashboard. All 11 curl checks passed.
 2026-04-01 — Angular core complete: AuthInterceptor, AuthService, AuthGuard, router with all routes + guards, NavbarComponent, 6 stub pages. ng build + ng serve both zero errors.
+2026-04-01 — /login and /register pages built, wired to backend, verified end-to-end. Fixed Prisma schema (timespan @default(0) was missing, register route required it).
 
 ---
 
@@ -165,26 +166,16 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED TASK : Angular core complete — interceptor, auth service, guard, router, navbar, stub pages all compile and guard redirects work
-NEXT TASK           : Build /login and /register pages, wire to backend auth routes
+LAST COMPLETED TASK : /login and /register pages built, wired to backend, verified end-to-end
+NEXT TASK           : Build the dashboard page — left panel (médecins suivis) and right panel (mes rapports with search + sort)
 BLOCKED ON          : nothing
-FILES CHANGED       : frontend/src/app/core/interceptors/auth.interceptor.ts (new),
-                      frontend/src/app/core/services/auth.service.ts (new),
-                      frontend/src/app/core/guards/auth.guard.ts (new),
-                      frontend/src/app/app.config.ts (provideHttpClient + APP_INITIALIZER added),
-                      frontend/src/app/app.routes.ts (all routes with guards),
-                      frontend/src/app/app.component.ts (NavbarComponent wired in),
-                      frontend/src/app/shared/navbar/navbar.component.ts (new),
-                      frontend/src/app/features/auth/login.component.ts (stub),
-                      frontend/src/app/features/auth/register.component.ts (stub),
-                      frontend/src/app/features/dashboard/dashboard.component.ts (stub),
-                      frontend/src/app/features/medecins/medecins.component.ts (stub),
-                      frontend/src/app/features/rapports/rapport-form.component.ts (stub),
-                      frontend/src/app/features/rapports/rapport-detail.component.ts (stub),
-                      frontend/src/index.html (Caveat font added)
+FILES CHANGED       : frontend/src/app/features/auth/login.component.ts (replaced stub with full implementation),
+                      frontend/src/app/features/auth/register.component.ts (replaced stub with full implementation),
+                      backend/prisma/schema.prisma (added @default(0) to timespan field — was required by Prisma but missing default)
 KNOWN BROKEN        : gitignore missing dot prefix — fix with: mv gitignore .gitignore
 DEVIATIONS FOUND    : Prisma 7 incompatible — downgraded to Prisma 5
                       SQL dump is at /sql/sql.sql (not project root gsbrapports.sql)
+                      Prisma schema was missing @default(0) on visiteur.timespan — fixed this session
 ```
 
 ---

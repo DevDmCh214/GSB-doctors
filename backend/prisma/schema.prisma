@@ -73,7 +73,7 @@ model visiteur {
   cp           String?   @db.Char(5)
   ville        String?   @db.Char(30)
   dateEmbauche DateTime? @db.Date
-  timespan     BigInt
+  timespan     BigInt    @default(0)
   ticket       String?   @db.VarChar(50)
   rapport      rapport[]
 }
