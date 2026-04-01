@@ -96,16 +96,16 @@ Do not add anything not shown. Do not change styling once it matches."
 - [x] `POST /api/auth/register`
 - [x] `POST /api/auth/logout`
 - [x] `GET  /api/auth/me`
-- [ ] `GET  /api/medecins`
-- [ ] `GET  /api/medecins/:id`
-- [ ] `GET  /api/rapports`
-- [ ] `GET  /api/rapports/:id`
-- [ ] `POST /api/rapports`
-- [ ] `PUT  /api/rapports/:id`
-- [ ] `DELETE /api/rapports/:id`
-- [ ] `GET  /api/medicaments`
-- [ ] `GET  /api/medicaments/:id`
-- [ ] `GET  /api/dashboard`
+- [x] `GET  /api/medecins`
+- [x] `GET  /api/medecins/:id`
+- [x] `GET  /api/rapports`
+- [x] `GET  /api/rapports/:id`
+- [x] `POST /api/rapports`
+- [x] `PUT  /api/rapports/:id`
+- [x] `DELETE /api/rapports/:id`
+- [x] `GET  /api/medicaments`
+- [x] `GET  /api/medicaments/:id`
+- [x] `GET  /api/dashboard`
 
 ### Frontend — Core
 - [x] Angular app starts (`ng serve`)
@@ -153,6 +153,7 @@ Do not add anything not shown. Do not change styling once it matches."
 <!-- 2024-05-01 — Scaffolded structure, Docker running, Prisma introspected, seed works -->
 2026-04-01 — Scaffold complete. Docker running, backend healthy, Prisma connected, seed done, Angular compiling. Ready to build auth routes.
 2026-04-01 — Auth middleware + all 4 auth routes built and verified with curl (login, me, wrong-password 401, logout, me-after-logout 401).
+2026-04-01 — All backend routes built and verified: medecins, rapports (CRUD), medicaments, dashboard. All 11 curl checks passed.
 
 ---
 
@@ -162,13 +163,16 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED TASK : All 4 auth routes passing curl tests
-NEXT TASK           : Build GET /api/medecins and GET /api/medecins/:id
+LAST COMPLETED TASK : All backend routes built and verified (medecins, rapports, medicaments, dashboard)
+NEXT TASK           : Angular core — AuthInterceptor, AuthService, AuthGuard, Router config, NavbarComponent
 BLOCKED ON          : nothing
-FILES CHANGED       : backend/src/middleware/auth.js (new),
-                      backend/src/routes/auth.js (new),
-                      backend/src/index.js (auth router + error handler added)
+FILES CHANGED       : backend/src/routes/medecins.js (new),
+                      backend/src/routes/rapports.js (new),
+                      backend/src/routes/medicaments.js (new),
+                      backend/src/routes/dashboard.js (new),
+                      backend/src/index.js (4 new routers mounted)
 KNOWN BROKEN        : gitignore missing dot prefix — fix with: mv gitignore .gitignore
+                      Port 3001 has a stuck process from previous session — new backend verified on port 3002
 DEVIATIONS FOUND    : Prisma 7 incompatible — downgraded to Prisma 5
                       SQL dump is at /sql/sql.sql (not project root gsbrapports.sql)
 ```
