@@ -120,8 +120,8 @@ Do not add anything not shown. Do not change styling once it matches."
 ### Frontend — Pages
 - [x] `/login` page wired to `POST /api/auth/login`
 - [x] `/register` page wired to `POST /api/auth/register`
-- [ ] `/` dashboard — left panel medecins suivis
-- [ ] `/` dashboard — right panel mes rapports (search + sort)
+- [x] `/` dashboard — left panel medecins suivis
+- [x] `/` dashboard — right panel mes rapports (search + sort)
 - [ ] `/medecins` list — search bar + Mon département toggle + cards grid
 - [ ] `/medecins` doctor detail modal — info + rapport list + nouveau rapport button
 - [ ] `/rapports/new` — form + medicament search + echantillons panel
@@ -157,6 +157,7 @@ Do not add anything not shown. Do not change styling once it matches."
 2026-04-01 — All backend routes built and verified: medecins, rapports (CRUD), medicaments, dashboard. All 11 curl checks passed.
 2026-04-01 — Angular core complete: AuthInterceptor, AuthService, AuthGuard, router with all routes + guards, NavbarComponent, 6 stub pages. ng build + ng serve both zero errors.
 2026-04-01 — /login and /register pages built, wired to backend, verified end-to-end. Fixed Prisma schema (timespan @default(0) was missing, register route required it).
+2026-04-01 — Dashboard page complete: left panel (médecins suivis with client-side search) and right panel (mes rapports with API search + sort). DashboardService and RapportService created.
 
 ---
 
@@ -166,16 +167,16 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED TASK : /login and /register pages built, wired to backend, verified end-to-end
-NEXT TASK           : Build the dashboard page — left panel (médecins suivis) and right panel (mes rapports with search + sort)
+LAST COMPLETED TASK : Dashboard page complete — both panels working, search and sort verified
+NEXT TASK           : Build /medecins list page — search bar, Mon département toggle, 4-column doctor cards grid
 BLOCKED ON          : nothing
-FILES CHANGED       : frontend/src/app/features/auth/login.component.ts (replaced stub with full implementation),
-                      frontend/src/app/features/auth/register.component.ts (replaced stub with full implementation),
-                      backend/prisma/schema.prisma (added @default(0) to timespan field — was required by Prisma but missing default)
+FILES CHANGED       : frontend/src/app/features/dashboard/dashboard.component.ts (full implementation)
+                      frontend/src/app/core/services/dashboard.service.ts (new — DashboardService + interfaces)
+                      frontend/src/app/core/services/rapport.service.ts (new — RapportService)
 KNOWN BROKEN        : gitignore missing dot prefix — fix with: mv gitignore .gitignore
 DEVIATIONS FOUND    : Prisma 7 incompatible — downgraded to Prisma 5
                       SQL dump is at /sql/sql.sql (not project root gsbrapports.sql)
-                      Prisma schema was missing @default(0) on visiteur.timespan — fixed this session
+                      Prisma schema was missing @default(0) on visiteur.timespan — fixed last session
 ```
 
 ---

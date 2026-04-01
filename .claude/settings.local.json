@@ -62,7 +62,16 @@
       "Bash(curl -s -c /tmp/c.txt -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"password\"}')",
       "Bash(curl -s -c /tmp/c2.txt -X POST http://localhost:3001/api/auth/register -H 'Content-Type: application/json' -d '{\"nom\":\"Test\",\"prenom\":\"User\",\"login\":\"testuser99\",\"mdp\":\"testpass\",\"adresse\":\"1 rue test\",\"cp\":\"75001\",\"ville\":\"Paris\",\"dateEmbauche\":\"2024-01-15\"}')",
       "Bash(powershell.exe -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
-      "Bash(powershell.exe -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process ng -ErrorAction SilentlyContinue | Stop-Process -Force\")"
+      "Bash(powershell.exe -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process ng -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(ng build:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3001/api/rapports\")",
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3001/api/rapports?search=martin\")",
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3001/api/rapports?sortDate=asc\")",
+      "Bash(curl -s -b /tmp/cookies.txt http://localhost:3001/api/dashboard)",
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3001/api/rapports?search=diaz\")",
+      "Bash(curl -s http://localhost:4200/)",
+      "Bash(taskkill /F /IM node.exe /T)"
     ]
   }
 }
