@@ -9,6 +9,32 @@ export interface RapportsResponse {
   count: number;
 }
 
+export interface Echantillon {
+  idMedicament: string;
+  nomCommercial: string;
+  libelle: string;
+  quantite: number;
+}
+
+export interface RapportDetail {
+  rapport: { id: number; date: string; motif: string; bilan: string };
+  medecin: { id: number; nom: string; prenom: string; specialitecomplementaire: string | null };
+  echantillons: Echantillon[];
+}
+
+export interface EchantillonInput {
+  idMedicament: string;
+  quantite: number;
+}
+
+export interface RapportInput {
+  idMedecin?: number;
+  date: string;
+  motif: string;
+  bilan: string;
+  echantillons: EchantillonInput[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class RapportService {
   private http = inject(HttpClient);
@@ -26,5 +52,21 @@ export class RapportService {
     if (params?.sortMotif) httpParams = httpParams.set('sortMotif', params.sortMotif);
     if (params?.sortNom) httpParams = httpParams.set('sortNom', params.sortNom);
     return this.http.get<RapportsResponse>(`${this.base}/api/rapports`, { params: httpParams });
+  }
+
+  getRapportById(id: number): Observable<RapportDetail> {
+    return this.http.get<RapportDetail>(`${this.base}/api/rapports/${id}`);
+  }
+
+  createRapport(data: RapportInput): Observable<{ rapport: any }> {
+    return this.http.post<{ rapport: any }>(`${this.base}/api/rapports`, data);
+  }
+
+  updateRapport(id: number, data: RapportInput): Observable<{ rapport: any }> {
+    return this.http.put<{ rapport: any }>(`${this.base}/api/rapports/${id}`, data);
+  }
+
+  deleteRapport(id: number): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.base}/api/rapports/${id}`);
   }
 }

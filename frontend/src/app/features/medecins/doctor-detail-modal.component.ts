@@ -31,8 +31,11 @@ import { MedecinService, MedecinDetail } from '../../core/services/medecin.servi
         <!-- Loading state -->
         <div *ngIf="loading" class="text-center py-8 text-gray-400">Chargement...</div>
 
+        <!-- Error state -->
+        <div *ngIf="!loading && error" class="text-center py-8 text-red-500">{{ error }}</div>
+
         <!-- Content -->
-        <ng-container *ngIf="!loading && detail">
+        <ng-container *ngIf="!loading && !error && detail">
           <!-- Title -->
           <div class="text-center mb-4">
             <h2 class="text-xl font-semibold">
@@ -118,6 +121,7 @@ export class DoctorDetailModalComponent implements OnChanges {
 
   detail: MedecinDetail | null = null;
   loading = false;
+  error: string | null = null;
 
   sortField: 'date' | 'motif' = 'date';
   sortDir: 'asc' | 'desc' = 'desc';
@@ -136,9 +140,10 @@ export class DoctorDetailModalComponent implements OnChanges {
     if (changes['medecinId'] && this.medecinId !== null) {
       this.loading = true;
       this.detail = null;
+      this.error = null;
       this.medecinService.getMedecinById(this.medecinId).subscribe({
         next: (d) => { this.detail = d; this.loading = false; },
-        error: () => { this.loading = false; }
+        error: () => { this.loading = false; this.error = 'Impossible de charger les informations du médecin.'; }
       });
     }
   }

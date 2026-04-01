@@ -55,8 +55,11 @@ import { DoctorDetailModalComponent } from './doctor-detail-modal.component';
         <!-- Loading -->
         <div *ngIf="loading" class="text-center text-gray-400 py-12">Chargement...</div>
 
+        <!-- Error -->
+        <div *ngIf="!loading && error" class="text-center text-red-500 py-12">{{ error }}</div>
+
         <!-- Cards grid -->
-        <div *ngIf="!loading" class="grid grid-cols-4 gap-4">
+        <div *ngIf="!loading && !error" class="grid grid-cols-4 gap-4">
           <div *ngFor="let m of medecins"
                class="border border-gray-200 rounded-xl p-4 bg-white cursor-pointer hover:shadow-md hover:border-gray-300 transition-shadow"
                (click)="selectMedecin(m.id)">
@@ -103,6 +106,7 @@ export class MedecinsComponent implements OnInit, OnDestroy {
   medecins: Medecin[] = [];
   count = 0;
   loading = false;
+  error = '';
 
   searchValue = '';
   deptFilter = false;
@@ -139,6 +143,7 @@ export class MedecinsComponent implements OnInit, OnDestroy {
 
   private fetch() {
     this.loading = true;
+    this.error = '';
     const params: { search?: string; dept?: number } = {};
 
     if (this.searchValue.trim()) {
@@ -160,6 +165,7 @@ export class MedecinsComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.loading = false;
+        this.error = 'Impossible de charger la liste des médecins.';
       }
     });
   }

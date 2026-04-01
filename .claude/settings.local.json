@@ -83,7 +83,25 @@
       "Bash(curl -s \"http://localhost:3001/api/medecins/1\" -b /tmp/cookies.txt)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('medecin:', d['medecin']['nom'], d['medecin']['prenom']\\); print\\('rapportCount:', d['rapportCount']\\); print\\('rapports count:', len\\(d['rapports']\\)\\)\")",
       "Bash(curl -s \"http://localhost:3001/api/medecins/821\" -b /tmp/cookies.txt)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('medecin:', d['medecin']['nom']\\); print\\('rapportCount:', d['rapportCount']\\); print\\('my rapports:', len\\(d['rapports']\\)\\); print\\('first rapport:', d['rapports'][0] if d['rapports'] else 'none'\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('medecin:', d['medecin']['nom']\\); print\\('rapportCount:', d['rapportCount']\\); print\\('my rapports:', len\\(d['rapports']\\)\\); print\\('first rapport:', d['rapports'][0] if d['rapports'] else 'none'\\)\")",
+      "Bash(curl -s -c /tmp/gsb-cookies.txt -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"password\"}')",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt http://localhost:3001/api/rapports/1)",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt \"http://localhost:3001/api/medicaments?search=amox\")",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt http://localhost:3001/api/rapports)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(r['id'], r['motif'][:30]\\) for r in data['rapports'][:5]]\")",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt http://localhost:3001/api/rapports/__TRACKED_VAR__)",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt \"http://localhost:3001/api/rapports/607\")",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt \"http://localhost:3001/api/medicaments/3MYC7\")",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt -X POST http://localhost:3001/api/rapports -H 'Content-Type: application/json' -d '{\"idMedecin\":229,\"date\":\"2026-04-02\",\"motif\":\"Test session\",\"bilan\":\"Bilan test\",\"echantillons\":[{\"idMedicament\":\"AMOX45\",\"quantite\":2}]}')",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt -X PUT http://localhost:3001/api/rapports/1613 -H 'Content-Type: application/json' -d '{\"date\":\"2026-04-02\",\"motif\":\"Test session modifié\",\"bilan\":\"Bilan mis à jour\",\"echantillons\":[{\"idMedicament\":\"AMOX45\",\"quantite\":3}]}')",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt \"http://localhost:3001/api/rapports/1613\")",
+      "Bash(curl -s -b /tmp/gsb-cookies.txt -X DELETE http://localhost:3001/api/rapports/1613)",
+      "Read(//c/Users/COMPUT~1/AppData/Local/Temp/claude/c--GSB-doctors/e6156f0d-20cd-498e-b63b-6526c4e43309/tasks/**)",
+      "Bash(curl -s http://localhost:4201)",
+      "Bash(taskkill //F //IM node.exe)"
+    ],
+    "additionalDirectories": [
+      "c:\\GSB-doctors"
     ]
   }
 }
