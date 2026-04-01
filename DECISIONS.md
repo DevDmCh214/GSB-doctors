@@ -122,8 +122,8 @@ Do not add anything not shown. Do not change styling once it matches."
 - [x] `/register` page wired to `POST /api/auth/register`
 - [x] `/` dashboard — left panel medecins suivis
 - [x] `/` dashboard — right panel mes rapports (search + sort)
-- [ ] `/medecins` list — search bar + Mon département toggle + cards grid
-- [ ] `/medecins` doctor detail modal — info + rapport list + nouveau rapport button
+- [x] `/medecins` list — search bar + Mon département toggle + cards grid
+- [x] `/medecins` doctor detail modal — info + rapport list + nouveau rapport button
 - [ ] `/rapports/new` — form + medicament search + echantillons panel
 - [ ] `/rapports/:id` — read mode
 - [ ] `/rapports/:id/edit` — edit mode
@@ -158,6 +158,7 @@ Do not add anything not shown. Do not change styling once it matches."
 2026-04-01 — Angular core complete: AuthInterceptor, AuthService, AuthGuard, router with all routes + guards, NavbarComponent, 6 stub pages. ng build + ng serve both zero errors.
 2026-04-01 — /login and /register pages built, wired to backend, verified end-to-end. Fixed Prisma schema (timespan @default(0) was missing, register route required it).
 2026-04-01 — Dashboard page complete: left panel (médecins suivis with client-side search) and right panel (mes rapports with API search + sort). DashboardService and RapportService created.
+2026-04-02 — /medecins list page and doctor detail modal complete: search, debounce, Mon département toggle, 4-column card grid, modal with rapport list + sort + nouveau rapport button. MedecinService created.
 
 ---
 
@@ -167,16 +168,17 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED TASK : Dashboard page complete — both panels working, search and sort verified
-NEXT TASK           : Build /medecins list page — search bar, Mon département toggle, 4-column doctor cards grid
+LAST COMPLETED TASK : /medecins list page and doctor detail modal complete — search, toggle, modal all verified
+NEXT TASK           : Build /rapports/:id read mode and /rapports/new + /rapports/:id/edit form
 BLOCKED ON          : nothing
-FILES CHANGED       : frontend/src/app/features/dashboard/dashboard.component.ts (full implementation)
-                      frontend/src/app/core/services/dashboard.service.ts (new — DashboardService + interfaces)
-                      frontend/src/app/core/services/rapport.service.ts (new — RapportService)
+FILES CHANGED       : frontend/src/app/features/medecins/medecins.component.ts (full implementation)
+                      frontend/src/app/features/medecins/doctor-detail-modal.component.ts (new)
+                      frontend/src/app/core/services/medecin.service.ts (new — MedecinService + interfaces)
 KNOWN BROKEN        : gitignore missing dot prefix — fix with: mv gitignore .gitignore
+                      aribiA dept filter returns 0 results — demo DB has depts 1-9 only, cp "46000" → dept=46 has no matches (data issue, not code bug)
 DEVIATIONS FOUND    : Prisma 7 incompatible — downgraded to Prisma 5
                       SQL dump is at /sql/sql.sql (not project root gsbrapports.sql)
-                      Prisma schema was missing @default(0) on visiteur.timespan — fixed last session
+                      Prisma schema was missing @default(0) on visiteur.timespan — fixed in earlier session
 ```
 
 ---

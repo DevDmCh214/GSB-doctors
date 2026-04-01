@@ -1,0 +1,174 @@
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { MedecinService, MedecinDetail } from '../../core/services/medecin.service';
+
+@Component({
+  selector: 'app-doctor-detail-modal',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <!-- Overlay -->
+    <div *ngIf="medecinId !== null"
+         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+         (click)="onOverlayClick($event)">
+      <!-- Modal card -->
+      <div class="bg-white rounded-2xl shadow-xl w-[560px] max-h-[80vh] flex flex-col p-6 relative"
+           (click)="$event.stopPropagation()">
+
+        <!-- Edit pencil top-left -->
+        <button class="absolute top-4 left-4 text-gray-400 hover:text-gray-600" title="Modifier (non implémenté)">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a4 4 0 01-1.657.985l-3.181.795.795-3.181A4 4 0 019 13z" />
+          </svg>
+        </button>
+
+        <!-- Close button top-right -->
+        <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl font-bold leading-none"
+                (click)="close.emit()">×</button>
+
+        <!-- Loading state -->
+        <div *ngIf="loading" class="text-center py-8 text-gray-400">Chargement...</div>
+
+        <!-- Content -->
+        <ng-container *ngIf="!loading && detail">
+          <!-- Title -->
+          <div class="text-center mb-4">
+            <h2 class="text-xl font-semibold">
+              Dr. {{ detail.medecin.nom.toUpperCase() }} {{ detail.medecin.prenom }}
+            </h2>
+            <p *ngIf="detail.medecin.specialitecomplementaire" class="text-sm text-gray-500 mt-1">
+              {{ detail.medecin.specialitecomplementaire }}
+            </p>
+          </div>
+
+          <!-- Address + Phone -->
+          <div class="flex items-center justify-between mb-4 text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 9.75L12 3l9 6.75V21a1 1 0 01-1 1H4a1 1 0 01-1-1V9.75z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 22V12h6v10" />
+              </svg>
+              {{ detail.medecin.adresse }}
+            </div>
+            <div *ngIf="detail.medecin.tel" class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 5a2 2 0 012-2h2.28a1 1 0 01.95.68l1.13 3.38a1 1 0 01-.23 1.05L7.5 9.5a16.06 16.06 0 006.99 7l1.38-1.63a1 1 0 011.05-.23l3.38 1.13a1 1 0 01.68.95V19a2 2 0 01-2 2C9.16 21 3 14.84 3 7V5z" />
+              </svg>
+              {{ detail.medecin.tel }}
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <hr class="border-gray-200 mb-3" />
+
+          <!-- Rapport table headers -->
+          <div class="flex items-center text-xs text-gray-500 mb-2 px-1">
+            <button class="flex items-center gap-1 mr-6 hover:text-gray-700" (click)="sortBy('date')">
+              date
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </button>
+            <button class="flex items-center gap-1 hover:text-gray-700" (click)="sortBy('motif')">
+              motif
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </button>
+            <span class="ml-auto text-gray-400">Il y a {{ detail.rapportCount }} rapports</span>
+          </div>
+
+          <!-- Rapport rows (scrollable) -->
+          <div class="overflow-y-auto flex-1 max-h-48 space-y-1">
+            <div *ngIf="sortedRapports.length === 0" class="text-center text-gray-400 text-sm py-4">
+              Aucun rapport
+            </div>
+            <div *ngFor="let r of sortedRapports"
+                 class="flex items-center text-sm border border-gray-100 rounded-lg px-3 py-2 gap-3">
+              <span class="text-gray-600 w-24 shrink-0">{{ formatDate(r.date) }}</span>
+              <span class="flex-1 text-gray-700 truncate">{{ r.motif }}</span>
+              <button class="w-6 h-6 rounded-full bg-gray-700 text-white text-xs flex items-center justify-center shrink-0 hover:bg-gray-900"
+                      (click)="openRapport(r.id)">i</button>
+            </div>
+          </div>
+
+          <!-- nouveau rapport button -->
+          <div class="mt-4 flex justify-center">
+            <button class="px-6 py-2 rounded-full border border-gray-300 text-gray-600 text-sm hover:bg-gray-50"
+                    (click)="newRapport()">
+              nouveau rapport
+            </button>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  `
+})
+export class DoctorDetailModalComponent implements OnChanges {
+  @Input() medecinId: number | null = null;
+  @Output() close = new EventEmitter<void>();
+
+  private medecinService = inject(MedecinService);
+  private router = inject(Router);
+
+  detail: MedecinDetail | null = null;
+  loading = false;
+
+  sortField: 'date' | 'motif' = 'date';
+  sortDir: 'asc' | 'desc' = 'desc';
+
+  get sortedRapports() {
+    if (!this.detail) return [];
+    return [...this.detail.rapports].sort((a, b) => {
+      const aVal = this.sortField === 'date' ? a.date : (a.motif ?? '');
+      const bVal = this.sortField === 'date' ? b.date : (b.motif ?? '');
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return this.sortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['medecinId'] && this.medecinId !== null) {
+      this.loading = true;
+      this.detail = null;
+      this.medecinService.getMedecinById(this.medecinId).subscribe({
+        next: (d) => { this.detail = d; this.loading = false; },
+        error: () => { this.loading = false; }
+      });
+    }
+  }
+
+  sortBy(field: 'date' | 'motif') {
+    if (this.sortField === field) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDir = 'asc';
+    }
+  }
+
+  formatDate(date: string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleDateString('fr-FR');
+  }
+
+  openRapport(id: number) {
+    this.router.navigate(['/rapports', id]);
+  }
+
+  newRapport() {
+    if (this.medecinId !== null) {
+      this.router.navigate(['/rapports/new'], { queryParams: { medecinId: this.medecinId } });
+    }
+  }
+
+  onOverlayClick(event: MouseEvent) {
+    this.close.emit();
+  }
+}

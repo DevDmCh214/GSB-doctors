@@ -71,7 +71,19 @@
       "Bash(curl -s -b /tmp/cookies.txt http://localhost:3001/api/dashboard)",
       "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3001/api/rapports?search=diaz\")",
       "Bash(curl -s http://localhost:4200/)",
-      "Bash(taskkill /F /IM node.exe /T)"
+      "Bash(taskkill /F /IM node.exe /T)",
+      "Bash(curl -s http://localhost:4200)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H \"Content-Type: application/json\" -d '{\"login\":\"aribiA\",\"mdp\":\"password\"}' -c /tmp/cookies.txt)",
+      "Bash(curl -s \"http://localhost:3001/api/medecins?search=martin\" -b /tmp/cookies.txt)",
+      "Bash(curl -s \"http://localhost:3001/api/medecins?dept=46\" -b /tmp/cookies.txt)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('count:', d['count']\\)\")",
+      "Bash(curl -s \"http://localhost:3001/api/medecins\" -b /tmp/cookies.txt)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); depts=set\\(m['departement'] for m in d['medecins']\\); print\\('Sample depts:', sorted\\(list\\(depts\\)\\)[:20]\\); print\\('Total:', d['count']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); depts=set\\(m['departement'] for m in d['medecins']\\); print\\('All depts:', sorted\\(list\\(depts\\)\\)\\)\")",
+      "Bash(curl -s \"http://localhost:3001/api/medecins/1\" -b /tmp/cookies.txt)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('medecin:', d['medecin']['nom'], d['medecin']['prenom']\\); print\\('rapportCount:', d['rapportCount']\\); print\\('rapports count:', len\\(d['rapports']\\)\\)\")",
+      "Bash(curl -s \"http://localhost:3001/api/medecins/821\" -b /tmp/cookies.txt)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('medecin:', d['medecin']['nom']\\); print\\('rapportCount:', d['rapportCount']\\); print\\('my rapports:', len\\(d['rapports']\\)\\); print\\('first rapport:', d['rapports'][0] if d['rapports'] else 'none'\\)\")"
     ]
   }
 }
