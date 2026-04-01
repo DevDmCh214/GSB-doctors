@@ -55,6 +55,7 @@ Do not add anything not shown. Do not change styling once it matches."
 - Global `HttpInterceptor` catches 401 responses and calls `router.navigate(['/login'])`
 - Medicament detail = small popup modal, no dedicated route
 - Doctor detail = overlay modal on `/medecins`, not a child route
+- At the end of every session: kill all running dev processes (backend node, frontend ng serve) before finishing — use `pkill -f "node src/index"` and `pkill -f "ng serve"` to avoid port conflicts in the next session
 
 ---
 
@@ -110,11 +111,11 @@ Do not add anything not shown. Do not change styling once it matches."
 ### Frontend — Core
 - [x] Angular app starts (`ng serve`)
 - [x] `environment.ts` with API_URL
-- [ ] `AuthInterceptor` (withCredentials + 401 redirect)
-- [ ] `AuthService` (BehaviorSubject, me() on init)
-- [ ] `AuthGuard`
-- [ ] Router config with all routes and guards
-- [ ] `NavbarComponent` (shows nom/prenom when logged in, connexion/inscription when not)
+- [x] `AuthInterceptor` (withCredentials + 401 redirect)
+- [x] `AuthService` (BehaviorSubject, me() on init)
+- [x] `AuthGuard`
+- [x] Router config with all routes and guards
+- [x] `NavbarComponent` (shows nom/prenom when logged in, connexion/inscription when not)
 
 ### Frontend — Pages
 - [ ] `/login` page wired to `POST /api/auth/login`
@@ -154,6 +155,7 @@ Do not add anything not shown. Do not change styling once it matches."
 2026-04-01 — Scaffold complete. Docker running, backend healthy, Prisma connected, seed done, Angular compiling. Ready to build auth routes.
 2026-04-01 — Auth middleware + all 4 auth routes built and verified with curl (login, me, wrong-password 401, logout, me-after-logout 401).
 2026-04-01 — All backend routes built and verified: medecins, rapports (CRUD), medicaments, dashboard. All 11 curl checks passed.
+2026-04-01 — Angular core complete: AuthInterceptor, AuthService, AuthGuard, router with all routes + guards, NavbarComponent, 6 stub pages. ng build + ng serve both zero errors.
 
 ---
 
@@ -163,16 +165,24 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED TASK : All backend routes built and verified (medecins, rapports, medicaments, dashboard)
-NEXT TASK           : Angular core — AuthInterceptor, AuthService, AuthGuard, Router config, NavbarComponent
+LAST COMPLETED TASK : Angular core complete — interceptor, auth service, guard, router, navbar, stub pages all compile and guard redirects work
+NEXT TASK           : Build /login and /register pages, wire to backend auth routes
 BLOCKED ON          : nothing
-FILES CHANGED       : backend/src/routes/medecins.js (new),
-                      backend/src/routes/rapports.js (new),
-                      backend/src/routes/medicaments.js (new),
-                      backend/src/routes/dashboard.js (new),
-                      backend/src/index.js (4 new routers mounted)
+FILES CHANGED       : frontend/src/app/core/interceptors/auth.interceptor.ts (new),
+                      frontend/src/app/core/services/auth.service.ts (new),
+                      frontend/src/app/core/guards/auth.guard.ts (new),
+                      frontend/src/app/app.config.ts (provideHttpClient + APP_INITIALIZER added),
+                      frontend/src/app/app.routes.ts (all routes with guards),
+                      frontend/src/app/app.component.ts (NavbarComponent wired in),
+                      frontend/src/app/shared/navbar/navbar.component.ts (new),
+                      frontend/src/app/features/auth/login.component.ts (stub),
+                      frontend/src/app/features/auth/register.component.ts (stub),
+                      frontend/src/app/features/dashboard/dashboard.component.ts (stub),
+                      frontend/src/app/features/medecins/medecins.component.ts (stub),
+                      frontend/src/app/features/rapports/rapport-form.component.ts (stub),
+                      frontend/src/app/features/rapports/rapport-detail.component.ts (stub),
+                      frontend/src/index.html (Caveat font added)
 KNOWN BROKEN        : gitignore missing dot prefix — fix with: mv gitignore .gitignore
-                      Port 3001 has a stuck process from previous session — new backend verified on port 3002
 DEVIATIONS FOUND    : Prisma 7 incompatible — downgraded to Prisma 5
                       SQL dump is at /sql/sql.sql (not project root gsbrapports.sql)
 ```

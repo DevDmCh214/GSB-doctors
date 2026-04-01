@@ -48,7 +48,14 @@
       "Bash(curl -s -b /tmp/c2.txt \"http://localhost:3002/api/medicaments?search=amox\")",
       "Bash(curl -s -b /tmp/c2.txt \"http://localhost:3002/api/medicaments/AMOX45\")",
       "Bash(curl -s -b /tmp/c2.txt \"http://localhost:3002/api/dashboard\")",
-      "Bash(curl -s -b /tmp/c2.txt \"http://localhost:3002/api/rapports/1\")"
+      "Bash(curl -s -b /tmp/c2.txt \"http://localhost:3002/api/rapports/1\")",
+      "Bash(npx ng:*)",
+      "Bash(echo \"ng serve PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200/)",
+      "Bash(curl -s -o /dev/null -w \"/ → %{http_code}\\\\n\" http://localhost:4200/)",
+      "Bash(curl -s -o /dev/null -w \"/login → %{http_code}\\\\n\" http://localhost:4200/login)",
+      "Bash(curl -s -o /dev/null -w \"/medecins → %{http_code}\\\\n\" http://localhost:4200/medecins)",
+      "Read(//tmp/**)"
     ]
   }
 }
