@@ -80,17 +80,17 @@ Do not add anything not shown. Do not change styling once it matches."
 ## What's Been Built
 
 ### Infrastructure
-- [ ] Folder structure created
-- [ ] docker-compose.yml working (MySQL 8 starts cleanly)
-- [ ] Backend dependencies installed
-- [ ] Angular 17 project initialized with Tailwind
-- [ ] Prisma initialized, schema introspected (`prisma db pull` succeeded)
-- [ ] .env files created
-- [ ] Seed script runs — all users get password `"password"`
+- [x] Folder structure created
+- [x] docker-compose.yml working (MySQL 8 starts cleanly)
+- [x] Backend dependencies installed
+- [x] Angular 17 project initialized with Tailwind
+- [x] Prisma initialized, schema introspected (`prisma db pull` succeeded)
+- [x] .env files created
+- [x] Seed script runs — all users get password `"password"`
 
 ### Backend
-- [ ] Express server starts (`node src/index.js`)
-- [ ] CORS + cookie-parser configured
+- [x] Express server starts (`node src/index.js`)
+- [x] CORS + cookie-parser configured
 - [ ] Auth middleware (`/backend/src/middleware/auth.js`)
 - [ ] `POST /api/auth/login`
 - [ ] `POST /api/auth/register`
@@ -108,8 +108,8 @@ Do not add anything not shown. Do not change styling once it matches."
 - [ ] `GET  /api/dashboard`
 
 ### Frontend — Core
-- [ ] Angular app starts (`ng serve`)
-- [ ] `environment.ts` with API_URL
+- [x] Angular app starts (`ng serve`)
+- [x] `environment.ts` with API_URL
 - [ ] `AuthInterceptor` (withCredentials + 401 redirect)
 - [ ] `AuthService` (BehaviorSubject, me() on init)
 - [ ] `AuthGuard`
@@ -150,6 +150,7 @@ Do not add anything not shown. Do not change styling once it matches."
 <!-- Add a one-line note after each session -->
 <!-- Example: -->
 <!-- 2024-05-01 — Scaffolded structure, Docker running, Prisma introspected, seed works -->
+2026-04-01 — Scaffold complete. Docker running, backend healthy, Prisma connected, seed done, Angular compiling. Ready to build auth routes.
 
 ---
 
@@ -159,12 +160,12 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED STEP : [e.g. STEP 5 — Seed]
-LAST COMPLETED TASK : [e.g. POST /api/auth/login — sets httpOnly cookie, tested with curl]
-NEXT TASK           : [e.g. POST /api/auth/register]
-BLOCKED ON          : [e.g. nothing — OR — describe exact error]
-FILES CHANGED       : [e.g. /backend/src/routes/auth.js, /backend/src/index.js]
-KNOWN BROKEN        : [e.g. nothing — OR — describe what is broken and why it is deferred]
+LAST COMPLETED STEP : STEP 7 — Full scaffold verified
+LAST COMPLETED TASK : Angular build clean, Prisma seeded (27 visiteurs, bcrypt hashes), Docker running, /api/health returns {ok:true}
+NEXT TASK           : Build auth routes — POST /api/auth/login, POST /api/auth/register, POST /api/auth/logout, GET /api/auth/me
+BLOCKED ON          : nothing
+FILES CHANGED       : docker-compose.yml, .env.example, backend/package.json, backend/.env, backend/src/index.js, backend/src/lib/prisma.js, backend/prisma/schema.prisma, backend/prisma/seed.js, frontend/ (full Angular app), frontend/tailwind.config.js, frontend/src/styles.css, frontend/src/environments/environment.ts
+KNOWN BROKEN        : gitignore file is named without dot prefix (gitignore instead of .gitignore) — not blocking
 ```
 
 ---

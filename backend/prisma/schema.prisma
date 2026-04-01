@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model famille {
+  id         String       @id @db.VarChar(10)
+  libelle    String       @db.VarChar(80)
+  medicament medicament[]
+}
+
+model medecin {
+  id                       Int       @id @default(autoincrement())
+  nom                      String    @db.VarChar(30)
+  prenom                   String    @db.VarChar(30)
+  adresse                  String    @db.VarChar(80)
+  tel                      String?   @db.VarChar(15)
+  specialitecomplementaire String?   @db.VarChar(50)
+  departement              Int
+  rapport                  rapport[]
+}
+
+model medicament {
+  id                String   @id @db.VarChar(30)
+  nomCommercial     String   @db.VarChar(80)
+  idFamille         String   @db.VarChar(10)
+  composition       String   @db.VarChar(100)
+  effets            String   @db.VarChar(100)
+  contreIndications String   @db.VarChar(100)
+  famille           famille  @relation(fields: [idFamille], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "medicament_fk")
+  offrir            offrir[]
+
+  @@index([idFamille], map: "medicament_fk")
+}
+
+model offrir {
+  idRapport    Int
+  idMedicament String     @db.VarChar(30)
+  quantite     Int?
+  rapport      rapport    @relation(fields: [idRapport], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "offrir_fk1")
+  medicament   medicament @relation(fields: [idMedicament], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "offrir_fk2")
+
+  @@id([idRapport, idMedicament])
+  @@index([idMedicament], map: "offrir_fk2")
+}
+
+model rapport {
+  id         Int       @id @default(autoincrement())
+  date       DateTime? @db.Date
+  motif      String?   @db.VarChar(100)
+  bilan      String?   @db.VarChar(100)
+  idVisiteur String    @db.Char(4)
+  idMedecin  Int
+  offrir     offrir[]
+  visiteur   visiteur  @relation(fields: [idVisiteur], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rapport_fk1")
+  medecin    medecin   @relation(fields: [idMedecin], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rapport_fk2")
+
+  @@index([idVisiteur], map: "rapport_fk1")
+  @@index([idMedecin], map: "rapport_fk2")
+}
+
+model visiteur {
+  id           String    @id @db.Char(4)
+  nom          String?   @db.Char(30)
+  prenom       String?   @db.Char(30)
+  login        String?   @db.Char(20)
+  mdp          String?   @db.Char(20)
+  adresse      String?   @db.Char(30)
+  cp           String?   @db.Char(5)
+  ville        String?   @db.Char(30)
+  dateEmbauche DateTime? @db.Date
+  timespan     BigInt
+  ticket       String?   @db.VarChar(50)
+  rapport      rapport[]
+}
