@@ -150,3 +150,45 @@ Do not add anything not shown. Do not change styling once it matches."
 <!-- Add a one-line note after each session -->
 <!-- Example: -->
 <!-- 2024-05-01 — Scaffolded structure, Docker running, Prisma introspected, seed works -->
+
+---
+
+## ⚡ CURRENT STATE — Update this block at the END of every session
+
+Claude Code must overwrite this block before finishing each session.
+This is the single source of truth for resuming after a token limit or new session.
+
+```
+LAST COMPLETED STEP : [e.g. STEP 5 — Seed]
+LAST COMPLETED TASK : [e.g. POST /api/auth/login — sets httpOnly cookie, tested with curl]
+NEXT TASK           : [e.g. POST /api/auth/register]
+BLOCKED ON          : [e.g. nothing — OR — describe exact error]
+FILES CHANGED       : [e.g. /backend/src/routes/auth.js, /backend/src/index.js]
+KNOWN BROKEN        : [e.g. nothing — OR — describe what is broken and why it is deferred]
+```
+
+---
+
+## How to resume after hitting the token limit
+
+Open a new Claude Code session and paste the following, filling in the CURRENT STATE values:
+
+─────────────────────────────────────────────────────────
+Read SPEC.md and DECISIONS.md fully before doing anything.
+Pay close attention to the ⚡ CURRENT STATE block at the bottom of DECISIONS.md.
+
+Resuming after token limit. Here is where we left off:
+- Last completed : [paste LAST COMPLETED TASK]
+- Next task      : [paste NEXT TASK]
+- Blocked on     : [paste BLOCKED ON]
+- Known broken   : [paste KNOWN BROKEN]
+
+Rules for this session:
+- Do not re-implement anything already checked off in "What's Been Built"
+- Do not touch any file not directly needed for today's task
+- Do not change any styling or markup that already works
+- Do not touch anything listed under KNOWN BROKEN unless today's task is specifically to fix it
+- At the end of this session, overwrite the ⚡ CURRENT STATE block with updated values
+
+Today's task: [paste NEXT TASK]
+─────────────────────────────────────────────────────────
