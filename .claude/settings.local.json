@@ -16,7 +16,16 @@
       "Bash(npm list:*)",
       "Bash(ng version:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(timeout 30 ng build)"
+      "Bash(timeout 30 ng build)",
+      "Bash(curl -s -c cookies.txt -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"password\"}')",
+      "Bash(curl -s -b cookies.txt http://localhost:3001/api/auth/me)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"wrong\"}')",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"wrong\"}')",
+      "Bash(curl -s -b cookies.txt -c cookies.txt -X POST http://localhost:3001/api/auth/logout)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 9556 /F)",
+      "Bash(taskkill //PID 9556 //F)",
+      "Bash(curl -s -w ' HTTP:%{http_code}' -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"wrong\"}')"
     ]
   }
 }

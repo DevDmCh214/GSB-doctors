@@ -91,11 +91,11 @@ Do not add anything not shown. Do not change styling once it matches."
 ### Backend
 - [x] Express server starts (`node src/index.js`)
 - [x] CORS + cookie-parser configured
-- [ ] Auth middleware (`/backend/src/middleware/auth.js`)
-- [ ] `POST /api/auth/login`
-- [ ] `POST /api/auth/register`
-- [ ] `POST /api/auth/logout`
-- [ ] `GET  /api/auth/me`
+- [x] Auth middleware (`/backend/src/middleware/auth.js`)
+- [x] `POST /api/auth/login`
+- [x] `POST /api/auth/register`
+- [x] `POST /api/auth/logout`
+- [x] `GET  /api/auth/me`
 - [ ] `GET  /api/medecins`
 - [ ] `GET  /api/medecins/:id`
 - [ ] `GET  /api/rapports`
@@ -142,6 +142,7 @@ Do not add anything not shown. Do not change styling once it matches."
 <!-- Example: -->
 <!-- - CORS is open (*) intentionally for local dev -->
 <!-- - Department filter uses substring logic, not a DB join -->
+- gitignore file created without dot prefix (named `gitignore` instead of `.gitignore`) — rename manually: `mv gitignore .gitignore`
 
 ---
 
@@ -151,6 +152,7 @@ Do not add anything not shown. Do not change styling once it matches."
 <!-- Example: -->
 <!-- 2024-05-01 — Scaffolded structure, Docker running, Prisma introspected, seed works -->
 2026-04-01 — Scaffold complete. Docker running, backend healthy, Prisma connected, seed done, Angular compiling. Ready to build auth routes.
+2026-04-01 — Auth middleware + all 4 auth routes built and verified with curl (login, me, wrong-password 401, logout, me-after-logout 401).
 
 ---
 
@@ -160,12 +162,15 @@ Claude Code must overwrite this block before finishing each session.
 This is the single source of truth for resuming after a token limit or new session.
 
 ```
-LAST COMPLETED STEP : STEP 7 — Full scaffold verified
-LAST COMPLETED TASK : Angular build clean, Prisma seeded (27 visiteurs, bcrypt hashes), Docker running, /api/health returns {ok:true}
-NEXT TASK           : Build auth routes — POST /api/auth/login, POST /api/auth/register, POST /api/auth/logout, GET /api/auth/me
+LAST COMPLETED TASK : All 4 auth routes passing curl tests
+NEXT TASK           : Build GET /api/medecins and GET /api/medecins/:id
 BLOCKED ON          : nothing
-FILES CHANGED       : docker-compose.yml, .env.example, backend/package.json, backend/.env, backend/src/index.js, backend/src/lib/prisma.js, backend/prisma/schema.prisma, backend/prisma/seed.js, frontend/ (full Angular app), frontend/tailwind.config.js, frontend/src/styles.css, frontend/src/environments/environment.ts
-KNOWN BROKEN        : gitignore file is named without dot prefix (gitignore instead of .gitignore) — not blocking
+FILES CHANGED       : backend/src/middleware/auth.js (new),
+                      backend/src/routes/auth.js (new),
+                      backend/src/index.js (auth router + error handler added)
+KNOWN BROKEN        : gitignore missing dot prefix — fix with: mv gitignore .gitignore
+DEVIATIONS FOUND    : Prisma 7 incompatible — downgraded to Prisma 5
+                      SQL dump is at /sql/sql.sql (not project root gsbrapports.sql)
 ```
 
 ---
