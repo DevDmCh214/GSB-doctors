@@ -68,12 +68,12 @@ model visiteur {
   nom          String?   @db.Char(30)
   prenom       String?   @db.Char(30)
   login        String?   @db.Char(20)
-  mdp          String?   @db.Char(20)
+  mdp          String?   @db.Char(60)
   adresse      String?   @db.Char(30)
   cp           String?   @db.Char(5)
   ville        String?   @db.Char(30)
   dateEmbauche DateTime? @db.Date
-  timespan     BigInt    @default(0)
+  timespan     BigInt
   ticket       String?   @db.VarChar(50)
   rapport      rapport[]
 }

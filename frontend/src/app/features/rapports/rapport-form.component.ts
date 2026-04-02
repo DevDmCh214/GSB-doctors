@@ -32,9 +32,13 @@ interface EchantillonLocal {
             <span class="text-gray-300 text-lg font-bold tracking-widest leading-none">...</span>
           </div>
 
-          <!-- Top-right dots -->
-          <div class="absolute top-4 right-4">
+          <!-- Top-right: dots + close without save (edit mode) -->
+          <div class="absolute top-4 right-4 flex items-center gap-2">
             <span class="text-gray-300 text-lg font-bold tracking-widest leading-none">...</span>
+            <button *ngIf="isEditMode" type="button"
+                    class="text-gray-400 hover:text-gray-700 text-xl font-bold leading-none"
+                    title="Fermer sans enregistrer"
+                    (click)="closeWithoutSaving()">×</button>
           </div>
 
           <!-- Loading doctor info -->
@@ -340,6 +344,12 @@ export class RapportFormComponent implements OnInit, OnDestroy {
     this.selectedMedicamentId = id;
   }
 
+  closeWithoutSaving() {
+    if (this.isEditMode) {
+      this.router.navigate(['/rapports', this.rapportId]);
+    }
+  }
+
   save() {
     this.saveError = null;
     this.saving = true;
@@ -367,9 +377,9 @@ export class RapportFormComponent implements OnInit, OnDestroy {
       });
     } else {
       this.rapportService.createRapport({ ...payload, idMedecin: this.medecinId }).subscribe({
-        next: (res) => {
+        next: () => {
           this.saving = false;
-          this.router.navigate(['/rapports', res.rapport.id]);
+          this.router.navigate(['/medecins']);
         },
         error: (err) => {
           this.saving = false;

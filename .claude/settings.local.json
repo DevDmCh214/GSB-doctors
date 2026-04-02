@@ -98,7 +98,19 @@
       "Bash(curl -s -b /tmp/gsb-cookies.txt -X DELETE http://localhost:3001/api/rapports/1613)",
       "Read(//c/Users/COMPUT~1/AppData/Local/Temp/claude/c--GSB-doctors/e6156f0d-20cd-498e-b63b-6526c4e43309/tasks/**)",
       "Bash(curl -s http://localhost:4201)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(grep \"INSERT INTO \\\\`medecin\\\\`\" /c/GSB-doctors/sql/sql.sql -A 30)",
+      "Bash(grep \"INSERT INTO \\\\`visiteur\\\\`\" /c/GSB-doctors/sql/sql.sql -A 5)",
+      "Bash(curl -s -c /tmp/gsb.jar -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"password\"}')",
+      "Bash(curl -s -b /tmp/gsb.jar \"http://localhost:3001/api/medecins?page=1&limit=20\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('count:', d['count'], 'totalPages:', d['totalPages'], 'returned:', len\\(d['medecins']\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\), 'count:', d.get\\('count'\\), 'medecins len:', len\\(d.get\\('medecins',[]\\)\\)\\)\")",
+      "Bash(curl -s -c /tmp/gsb2.jar -b /tmp/gsb2.jar -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"login\":\"aribiA\",\"mdp\":\"password\"}')",
+      "Bash(curl -sv -b /tmp/gsb2.jar \"http://localhost:3001/api/medecins?page=1&limit=20\")",
+      "Bash(curl -s -b /tmp/gsb2.jar \"http://localhost:3001/api/medecins?page=1&limit=20\")",
+      "Bash(taskkill /F /PID 18080 /PID 19044)",
+      "Bash(taskkill //F //PID 18080 //PID 19044)",
+      "Bash(curl -s -b /tmp/gsb3.jar \"http://localhost:3001/api/medecins?page=2&limit=20\")"
     ],
     "additionalDirectories": [
       "c:\\GSB-doctors"

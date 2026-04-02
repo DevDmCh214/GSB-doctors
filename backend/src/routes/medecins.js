@@ -6,7 +6,7 @@ const router = Router()
 // GET /api/medecins
 router.get('/', async (req, res, next) => {
   try {
-    const { search, dept } = req.query
+    const { search } = req.query
 
     const where = {}
 
@@ -17,26 +17,80 @@ router.get('/', async (req, res, next) => {
       ]
     }
 
-    if (dept !== undefined && dept !== '') {
-      where.departement = parseInt(dept, 10)
+    const LIMIT = Math.min(parseInt(req.query.limit, 10) || 20, 100)
+    const PAGE  = Math.max(parseInt(req.query.page,  10) || 1, 1)
+    const SKIP  = (PAGE - 1) * LIMIT
+
+    const [total, medecins] = await Promise.all([
+      prisma.medecin.count({ where }),
+      prisma.medecin.findMany({
+        where,
+        orderBy: [{ nom: 'asc' }, { prenom: 'asc' }],
+        skip: SKIP,
+        take: LIMIT,
+        select: {
+          id: true,
+          nom: true,
+          prenom: true,
+          adresse: true,
+          tel: true,
+          specialitecomplementaire: true,
+          departement: true
+        }
+      })
+    ])
+
+    res.json({ medecins, count: total, totalPages: Math.ceil(total / LIMIT) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// PATCH /api/medecins/:id — update adresse, tel
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+    const { adresse, tel } = req.body
+
+    if (typeof adresse !== 'string' || !adresse.trim()) {
+      return res.status(400).json({ error: 'L\'adresse est requise.' })
     }
 
-    const medecins = await prisma.medecin.findMany({
-      where,
-      orderBy: [{ nom: 'asc' }, { prenom: 'asc' }],
+    const adresseTrim = adresse.trim()
+    if (adresseTrim.length > 80) {
+      return res.status(400).json({ error: 'L\'adresse est trop longue (80 caractères max).' })
+    }
+
+    let telValue = null
+    if (tel !== undefined && tel !== null && String(tel).trim() !== '') {
+      const t = String(tel).trim()
+      if (t.length > 15) {
+        return res.status(400).json({ error: 'Le numéro est trop long (15 caractères max).' })
+      }
+      telValue = t
+    }
+
+    const medecin = await prisma.medecin.update({
+      where: { id },
+      data: {
+        adresse: adresseTrim,
+        tel: telValue
+      },
       select: {
         id: true,
         nom: true,
         prenom: true,
         adresse: true,
         tel: true,
-        specialitecomplementaire: true,
-        departement: true
+        specialitecomplementaire: true
       }
     })
 
-    res.json({ medecins, count: medecins.length })
+    res.json({ medecin })
   } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'Médecin non trouvé' })
+    }
     next(err)
   }
 })
@@ -68,11 +122,7 @@ router.get('/:id', async (req, res, next) => {
       select: { id: true, date: true, motif: true }
     })
 
-    const rapportCount = await prisma.rapport.count({
-      where: { idMedecin: id }
-    })
-
-    res.json({ medecin, rapports, rapportCount })
+    res.json({ medecin, rapports, rapportCount: rapports.length })
   } catch (err) {
     next(err)
   }

@@ -6,6 +6,7 @@ import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { DashboardService, MedecinSuivi, RapportSummary } from '../../core/services/dashboard.service';
 import { RapportService } from '../../core/services/rapport.service';
+import { DoctorDetailModalComponent } from '../medecins/doctor-detail-modal.component';
 
 type SortField = 'date' | 'nom' | 'motif';
 type SortDir = 'asc' | 'desc';
@@ -13,7 +14,7 @@ type SortDir = 'asc' | 'desc';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DoctorDetailModalComponent],
   template: `
     <div class="flex gap-4 p-4 h-full" style="min-height: calc(100vh - 48px);">
 
@@ -37,7 +38,7 @@ type SortDir = 'asc' | 'desc';
         <div class="flex flex-col gap-2 overflow-y-auto">
           <div
             *ngFor="let m of filteredMedecins"
-            (click)="goToMedecins()"
+            (click)="openMedecinModal(m.id)"
             class="flex items-center justify-between border border-gray-300 rounded-full px-3 py-1 cursor-pointer hover:bg-gray-50"
           >
             <span class="text-sm">{{ m.nom }} {{ m.prenom }}</span>
@@ -98,6 +99,12 @@ type SortDir = 'asc' | 'desc';
       </div>
 
     </div>
+
+    <!-- Doctor detail modal (opened from left panel) -->
+    <app-doctor-detail-modal
+      [medecinId]="selectedMedecinId"
+      (close)="selectedMedecinId = null">
+    </app-doctor-detail-modal>
   `
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -111,6 +118,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   allMedecins: MedecinSuivi[] = [];
   filteredMedecins: MedecinSuivi[] = [];
   medecinSearch = '';
+  selectedMedecinId: number | null = null;
 
   // Right panel state
   rapportLoading = false;
@@ -134,7 +142,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.loading = false;
-        this.error = 'Erreur lors du chargement des données.';
+        this.error = 'Impossible de charger le tableau de bord.';
       }
     });
 
@@ -155,7 +163,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.rapportLoading = false;
-        this.rapportError = 'Erreur lors du chargement des rapports.';
+        this.rapportError = 'Impossible de charger le tableau de bord.';
       }
     });
 
@@ -174,6 +182,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
           m.nom.toLowerCase().includes(q) || m.prenom.toLowerCase().includes(q)
         )
       : [...this.allMedecins];
+  }
+
+  openMedecinModal(id: number) {
+    this.selectedMedecinId = id;
   }
 
   onRapportSearchChange(value: string) {
@@ -217,7 +229,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.rapportLoading = false;
-        this.rapportError = 'Erreur lors du chargement des rapports.';
+        this.rapportError = 'Impossible de charger le tableau de bord.';
       }
     });
   }
@@ -225,10 +237,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   formatDate(date: string): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('fr-FR');
-  }
-
-  goToMedecins() {
-    this.router.navigate(['/medecins']);
   }
 
   goToRapport(id: number) {

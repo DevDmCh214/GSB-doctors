@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MedecinService, Medecin } from '../../core/services/medecin.service';
-import { AuthService } from '../../core/services/auth.service';
 import { DoctorDetailModalComponent } from './doctor-detail-modal.component';
+
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-medecins',
@@ -14,25 +15,6 @@ import { DoctorDetailModalComponent } from './doctor-detail-modal.component';
   template: `
     <div class="min-h-screen bg-gray-50">
       <div class="max-w-7xl mx-auto px-6 py-8">
-
-        <!-- Toggle -->
-        <div class="flex flex-col items-center mb-4">
-          <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-600">Mon département</span>
-            <button
-              type="button"
-              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
-              [class.bg-gray-700]="deptFilter"
-              [class.bg-gray-300]="!deptFilter"
-              (click)="toggleDept()">
-              <span
-                class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                [class.translate-x-6]="deptFilter"
-                [class.translate-x-1]="!deptFilter">
-              </span>
-            </button>
-          </div>
-        </div>
 
         <!-- Search bar -->
         <div class="relative mb-3">
@@ -89,6 +71,38 @@ import { DoctorDetailModalComponent } from './doctor-detail-modal.component';
           </div>
         </div>
 
+        <!-- Pagination -->
+        <div *ngIf="!loading && !error && totalPages > 1"
+             class="flex items-center justify-center gap-1 mt-8 flex-wrap">
+
+          <button
+            class="px-3 py-1 rounded border border-gray-300 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)">
+            ‹ Précédent
+          </button>
+
+          <ng-container *ngFor="let p of pageNumbers">
+            <span *ngIf="p === -1" class="px-2 text-gray-400 select-none">…</span>
+            <button *ngIf="p !== -1"
+              class="px-3 py-1 rounded border text-sm transition-colors"
+              [ngClass]="p === currentPage
+                ? 'bg-gray-800 text-white border-gray-800'
+                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'"
+              (click)="goToPage(p)">
+              {{ p }}
+            </button>
+          </ng-container>
+
+          <button
+            class="px-3 py-1 rounded border border-gray-300 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)">
+            Suivant ›
+          </button>
+
+        </div>
+
       </div>
     </div>
 
@@ -101,23 +115,42 @@ import { DoctorDetailModalComponent } from './doctor-detail-modal.component';
 })
 export class MedecinsComponent implements OnInit, OnDestroy {
   private medecinService = inject(MedecinService);
-  private authService = inject(AuthService);
 
   medecins: Medecin[] = [];
   count = 0;
+  totalPages = 1;
+  currentPage = 1;
   loading = false;
   error = '';
 
   searchValue = '';
-  deptFilter = false;
   selectedMedecinId: number | null = null;
 
   private searchSubject = new Subject<string>();
   private subs = new Subscription();
 
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    const cur = this.currentPage;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+      return pages;
+    }
+
+    pages.push(1);
+    if (cur > 3) pages.push(-1);
+    for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i);
+    if (cur < total - 2) pages.push(-1);
+    pages.push(total);
+    return pages;
+  }
+
   ngOnInit() {
     this.subs.add(
       this.searchSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => {
+        this.currentPage = 1;
         this.fetch();
       })
     );
@@ -132,35 +165,31 @@ export class MedecinsComponent implements OnInit, OnDestroy {
     this.searchSubject.next(value);
   }
 
-  toggleDept() {
-    this.deptFilter = !this.deptFilter;
-    this.fetch();
-  }
-
   selectMedecin(id: number) {
     this.selectedMedecinId = id;
+  }
+
+  goToPage(page: number) {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    this.fetch();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   private fetch() {
     this.loading = true;
     this.error = '';
-    const params: { search?: string; dept?: number } = {};
-
-    if (this.searchValue.trim()) {
-      params.search = this.searchValue.trim();
-    }
-
-    if (this.deptFilter) {
-      const visiteur = this.authService.currentVisiteur();
-      if (visiteur?.cp) {
-        params.dept = parseInt(visiteur.cp.substring(0, 2), 10);
-      }
-    }
+    const params: { search?: string; page: number; limit: number } = {
+      page: this.currentPage,
+      limit: PAGE_SIZE
+    };
+    if (this.searchValue.trim()) params.search = this.searchValue.trim();
 
     this.medecinService.getMedecins(params).subscribe({
       next: (res) => {
         this.medecins = res.medecins;
         this.count = res.count;
+        this.totalPages = res.totalPages ?? 1;
         this.loading = false;
       },
       error: () => {
