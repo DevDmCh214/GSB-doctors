@@ -31,7 +31,7 @@ Les visiteurs médicaux utilisent cette application pour :
 ### 1. Cloner le dépôt
 
 ```bash
-git clone <url-du-repo>
+git clone (https://github.com/DevDmCh214/GSB-doctors.git)
 cd GSB-doctors
 ```
 
