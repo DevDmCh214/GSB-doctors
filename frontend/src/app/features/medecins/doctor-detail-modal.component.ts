@@ -88,7 +88,12 @@ import { MedecinService, MedecinDetail } from '../../core/services/medecin.servi
                      placeholder="Téléphone (optionnel)" />
             </div>
             <div *ngIf="saveError" class="text-red-500 text-sm">{{ saveError }}</div>
-            <div class="flex justify-end">
+            <div class="flex justify-between">
+              <button type="button"
+                      class="px-5 py-2 rounded-full border border-gray-300 text-gray-600 text-sm hover:bg-gray-50"
+                      (click)="showDeleteConfirm = true">
+                supprimer
+              </button>
               <button type="button"
                       class="px-6 py-2 rounded-full bg-gray-800 text-white text-sm hover:bg-gray-900 disabled:opacity-50"
                       [disabled]="saving"
@@ -142,6 +147,25 @@ import { MedecinService, MedecinDetail } from '../../core/services/medecin.servi
         </ng-container>
       </div>
     </div>
+
+    <!-- Delete confirmation overlay -->
+    <div *ngIf="showDeleteConfirm"
+         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[60]">
+      <div class="bg-white rounded-xl shadow-xl p-6 w-96">
+        <h3 class="text-gray-800 font-semibold mb-2">Voulez-vous supprimer ce médecin ?</h3>
+        <p class="text-gray-600 text-sm mb-4">Toutes ces donnes et rapports seront perdus.</p>
+        <div *ngIf="deleteError" class="text-red-500 text-sm mb-3">{{ deleteError }}</div>
+        <div class="flex gap-3 justify-end">
+          <button class="px-4 py-2 rounded-full border border-gray-300 text-gray-600 text-sm hover:bg-gray-50"
+                  (click)="showDeleteConfirm = false; deleteError = null">Non</button>
+          <button class="px-4 py-2 rounded-full bg-gray-800 text-white text-sm hover:bg-gray-900 disabled:opacity-50"
+                  [disabled]="deleting"
+                  (click)="doDelete()">
+            {{ deleting ? 'Suppression...' : 'Oui' }}
+          </button>
+        </div>
+      </div>
+    </div>
   `
 })
 export class DoctorDetailModalComponent implements OnChanges {
@@ -160,6 +184,9 @@ export class DoctorDetailModalComponent implements OnChanges {
   editTel = '';
   saving = false;
   saveError: string | null = null;
+  showDeleteConfirm = false;
+  deleting = false;
+  deleteError: string | null = null;
 
   sortField: 'date' | 'motif' = 'date';
   sortDir: 'asc' | 'desc' = 'desc';
@@ -178,11 +205,14 @@ export class DoctorDetailModalComponent implements OnChanges {
     if (!changes['medecinId']) return;
     if (this.medecinId === null) {
       this.editing = false;
+      this.showDeleteConfirm = false;
       this.detail = null;
       return;
     }
     this.editing = false;
     this.saveError = null;
+    this.showDeleteConfirm = false;
+    this.deleteError = null;
     this.loading = true;
     this.detail = null;
     this.error = null;
@@ -224,9 +254,13 @@ export class DoctorDetailModalComponent implements OnChanges {
       this.saveError = 'L\'adresse est requise.';
       return;
     }
+    const telTrim = this.editTel.trim();
+    if (telTrim && !/^[\d\s\+\-\.()]+$/.test(telTrim)) {
+      this.saveError = 'Le numéro de téléphone contient des caractères invalides.';
+      return;
+    }
     this.saveError = null;
     this.saving = true;
-    const telTrim = this.editTel.trim();
     this.medecinService
       .updateMedecin(this.medecinId, {
         adresse,
@@ -246,6 +280,23 @@ export class DoctorDetailModalComponent implements OnChanges {
           this.saveError = err.error?.error ?? 'Impossible d\'enregistrer.';
         }
       });
+  }
+
+  doDelete() {
+    if (this.medecinId === null) return;
+    this.deleting = true;
+    this.deleteError = null;
+    this.medecinService.deleteMedecin(this.medecinId).subscribe({
+      next: () => {
+        this.deleting = false;
+        this.showDeleteConfirm = false;
+        this.close.emit();
+      },
+      error: (err) => {
+        this.deleting = false;
+        this.deleteError = err.error?.error ?? 'Erreur lors de la suppression.';
+      }
+    });
   }
 
   sortBy(field: 'date' | 'motif') {

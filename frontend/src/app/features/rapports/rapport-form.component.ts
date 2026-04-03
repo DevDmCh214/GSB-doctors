@@ -140,7 +140,7 @@ interface EchantillonLocal {
         <!-- ── ECHANTILLONS PANEL (right side) ── -->
         <div *ngIf="echantillons.length > 0"
              class="bg-white rounded-2xl shadow-xl w-64 p-5 flex flex-col">
-          <p class="text-sm text-gray-600 mb-3 font-medium">{{ echantillons.length }} echantillons offerts</p>
+          <p class="text-sm text-gray-600 mb-3 font-medium">{{ totalEchantillons() }} echantillons offerts</p>
           <div class="space-y-3 overflow-y-auto max-h-[60vh]">
             <div *ngFor="let e of echantillons" class="text-sm">
               <div class="flex items-center gap-1">
@@ -352,6 +352,28 @@ export class RapportFormComponent implements OnInit, OnDestroy {
 
   save() {
     this.saveError = null;
+
+    if (!this.formDate) {
+      this.saveError = 'La date est requise.';
+      return;
+    }
+    if (!this.formMotif.trim()) {
+      this.saveError = 'Le motif est requis.';
+      return;
+    }
+    if (this.formMotif.trim().length > 100) {
+      this.saveError = 'Le motif est trop long (100 caractères max).';
+      return;
+    }
+    if (!this.formBilan.trim()) {
+      this.saveError = 'Le bilan est requis.';
+      return;
+    }
+    if (this.formBilan.trim().length > 100) {
+      this.saveError = 'Le bilan est trop long (100 caractères max).';
+      return;
+    }
+
     this.saving = true;
 
     const payload = {
@@ -387,6 +409,10 @@ export class RapportFormComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  totalEchantillons(): number {
+    return this.echantillons.reduce((sum, e) => sum + (e.quantite || 0), 0);
   }
 
   confirmDelete() {

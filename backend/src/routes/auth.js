@@ -42,6 +42,45 @@ router.post('/login', async (req, res, next) => {
 router.post('/register', async (req, res, next) => {
   try {
     const { nom, prenom, login, mdp, adresse, cp, ville, dateEmbauche } = req.body
+
+    // Required fields
+    if (!nom || !nom.trim()) {
+      return res.status(400).json({ error: 'Le nom est requis.' })
+    }
+    if (!prenom || !prenom.trim()) {
+      return res.status(400).json({ error: 'Le prénom est requis.' })
+    }
+    if (!login || !login.trim()) {
+      return res.status(400).json({ error: 'Le pseudo est requis.' })
+    }
+    if (!mdp || mdp.length < 4) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 4 caractères.' })
+    }
+
+    // Field length validations (match DB column sizes)
+    if (nom.trim().length > 30) {
+      return res.status(400).json({ error: 'Le nom est trop long (30 caractères max).' })
+    }
+    if (prenom.trim().length > 30) {
+      return res.status(400).json({ error: 'Le prénom est trop long (30 caractères max).' })
+    }
+    if (login.trim().length > 20) {
+      return res.status(400).json({ error: 'Le pseudo est trop long (20 caractères max).' })
+    }
+    if (adresse && adresse.trim().length > 30) {
+      return res.status(400).json({ error: 'L\'adresse est trop longue (30 caractères max).' })
+    }
+
+    // Code postal: exactly 5 digits
+    if (cp && !/^\d{5}$/.test(cp.trim())) {
+      return res.status(400).json({ error: 'Le code postal doit contenir exactement 5 chiffres.' })
+    }
+
+    // Ville
+    if (ville && ville.trim().length > 30) {
+      return res.status(400).json({ error: 'La ville est trop longue (30 caractères max).' })
+    }
+
     const existing = await prisma.visiteur.findFirst({ where: { login } })
     if (existing) {
       return res.status(400).json({ error: 'Ce pseudo est déjà utilisé' })

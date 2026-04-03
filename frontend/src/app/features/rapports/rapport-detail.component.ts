@@ -88,11 +88,11 @@ import { MedicamentDetailModalComponent } from './medicament-detail-modal.compon
 
           <!-- Echantillons -->
           <ng-container *ngIf="detail.echantillons.length > 0">
-            <p class="text-sm text-gray-600 mb-2">{{ detail.echantillons.length }} echantillons offerts</p>
+            <p class="text-sm text-gray-600 mb-2">{{ totalEchantillons() }} echantillons offerts</p>
             <div class="overflow-y-auto max-h-48 space-y-1">
               <div *ngFor="let e of detail.echantillons"
                    class="flex items-center text-sm border border-gray-100 rounded-lg px-3 py-2 gap-3">
-                <span class="flex-1 text-gray-700">• {{ e.nomCommercial }}, {{ e.libelle }}</span>
+                <span class="flex-1 text-gray-700">• {{ e.nomCommercial }}, {{ e.libelle }} <span class="text-gray-400">(x{{ e.quantite }})</span></span>
                 <button class="w-6 h-6 rounded-full bg-gray-700 text-white text-xs flex items-center justify-center shrink-0 hover:bg-gray-900"
                         (click)="openMedicament(e.idMedicament)">i</button>
               </div>
@@ -187,6 +187,11 @@ export class RapportDetailComponent implements OnInit {
 
   openMedicament(id: string) {
     this.selectedMedicamentId = id;
+  }
+
+  totalEchantillons(): number {
+    if (!this.detail) return 0;
+    return this.detail.echantillons.reduce((sum, e) => sum + (e.quantite || 0), 0);
   }
 
   formatDate(date: string): string {

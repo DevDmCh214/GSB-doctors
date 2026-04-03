@@ -89,6 +89,34 @@ router.post('/', async (req, res, next) => {
   try {
     const { idMedecin, date, motif, bilan, echantillons = [] } = req.body
 
+    if (!idMedecin) {
+      return res.status(400).json({ error: 'Le médecin est requis.' })
+    }
+    if (!date) {
+      return res.status(400).json({ error: 'La date est requise.' })
+    }
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'La date est invalide.' })
+    }
+    if (!motif || !motif.trim()) {
+      return res.status(400).json({ error: 'Le motif est requis.' })
+    }
+    if (motif.trim().length > 100) {
+      return res.status(400).json({ error: 'Le motif est trop long (100 caractères max).' })
+    }
+    if (!bilan || !bilan.trim()) {
+      return res.status(400).json({ error: 'Le bilan est requis.' })
+    }
+    if (bilan.trim().length > 100) {
+      return res.status(400).json({ error: 'Le bilan est trop long (100 caractères max).' })
+    }
+    for (const e of echantillons) {
+      if (!e.idMedicament || !e.quantite || e.quantite < 1) {
+        return res.status(400).json({ error: 'Chaque échantillon doit avoir un médicament et une quantité positive.' })
+      }
+    }
+
     const medecin = await prisma.medecin.findUnique({ where: { id: parseInt(idMedecin, 10) } })
     if (!medecin) {
       return res.status(404).json({ error: 'Médecin non trouvé' })
@@ -97,9 +125,9 @@ router.post('/', async (req, res, next) => {
     const rapport = await prisma.$transaction(async (tx) => {
       const created = await tx.rapport.create({
         data: {
-          date: new Date(date),
-          motif,
-          bilan,
+          date: parsedDate,
+          motif: motif.trim(),
+          bilan: bilan.trim(),
           idVisiteur: req.visiteur.id,
           idMedecin: parseInt(idMedecin, 10)
         }
@@ -138,6 +166,31 @@ router.put('/:id', async (req, res, next) => {
     const id = parseInt(req.params.id, 10)
     const { date, motif, bilan, echantillons = [] } = req.body
 
+    if (!date) {
+      return res.status(400).json({ error: 'La date est requise.' })
+    }
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'La date est invalide.' })
+    }
+    if (!motif || !motif.trim()) {
+      return res.status(400).json({ error: 'Le motif est requis.' })
+    }
+    if (motif.trim().length > 100) {
+      return res.status(400).json({ error: 'Le motif est trop long (100 caractères max).' })
+    }
+    if (!bilan || !bilan.trim()) {
+      return res.status(400).json({ error: 'Le bilan est requis.' })
+    }
+    if (bilan.trim().length > 100) {
+      return res.status(400).json({ error: 'Le bilan est trop long (100 caractères max).' })
+    }
+    for (const e of echantillons) {
+      if (!e.idMedicament || !e.quantite || e.quantite < 1) {
+        return res.status(400).json({ error: 'Chaque échantillon doit avoir un médicament et une quantité positive.' })
+      }
+    }
+
     const existing = await prisma.rapport.findUnique({ where: { id } })
     if (!existing) {
       return res.status(404).json({ error: 'Rapport non trouvé' })
@@ -149,7 +202,7 @@ router.put('/:id', async (req, res, next) => {
     const rapport = await prisma.$transaction(async (tx) => {
       const updated = await tx.rapport.update({
         where: { id },
-        data: { date: new Date(date), motif, bilan }
+        data: { date: parsedDate, motif: motif.trim(), bilan: bilan.trim() }
       })
 
       await tx.offrir.deleteMany({ where: { idRapport: id } })

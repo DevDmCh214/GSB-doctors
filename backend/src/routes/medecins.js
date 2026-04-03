@@ -67,6 +67,9 @@ router.patch('/:id', async (req, res, next) => {
       if (t.length > 15) {
         return res.status(400).json({ error: 'Le numéro est trop long (15 caractères max).' })
       }
+      if (!/^[\d\s\+\-\.()]+$/.test(t)) {
+        return res.status(400).json({ error: 'Le numéro de téléphone contient des caractères invalides.' })
+      }
       telValue = t
     }
 
@@ -91,6 +94,37 @@ router.patch('/:id', async (req, res, next) => {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Médecin non trouvé' })
     }
+    next(err)
+  }
+})
+
+// DELETE /api/medecins/:id — cascade delete: offrir → rapports → medecin
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+
+    const medecin = await prisma.medecin.findUnique({ where: { id } })
+    if (!medecin) {
+      return res.status(404).json({ error: 'Médecin non trouvé' })
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Delete all offrir rows for all rapports of this medecin
+      await tx.offrir.deleteMany({
+        where: { rapport: { idMedecin: id } }
+      })
+      // Delete all rapports for this medecin
+      await tx.rapport.deleteMany({
+        where: { idMedecin: id }
+      })
+      // Delete the medecin
+      await tx.medecin.delete({
+        where: { id }
+      })
+    })
+
+    res.json({ success: true })
+  } catch (err) {
     next(err)
   }
 })

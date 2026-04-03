@@ -139,6 +139,25 @@ export class RegisterComponent implements OnInit {
 
   onSubmit(): void {
     this.errorMsg = '';
+
+    // Client-side validation
+    if (!this.nom.trim() || !this.prenom.trim()) {
+      this.errorMsg = 'Le nom et le prénom sont requis.';
+      return;
+    }
+    if (!this.login.trim()) {
+      this.errorMsg = 'Le pseudo est requis.';
+      return;
+    }
+    if (this.mdp.length < 4) {
+      this.errorMsg = 'Le mot de passe doit contenir au moins 4 caractères.';
+      return;
+    }
+    if (this.cp && !/^\d{5}$/.test(this.cp.trim())) {
+      this.errorMsg = 'Le code postal doit contenir exactement 5 chiffres.';
+      return;
+    }
+
     this.loading = true;
     this.auth.register({
       nom: this.nom,

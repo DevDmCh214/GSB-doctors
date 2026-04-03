@@ -43,6 +43,10 @@ export class MedecinService {
     return this.http.get<MedecinDetail>(`${this.base}/api/medecins/${id}`);
   }
 
+  deleteMedecin(id: number): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.base}/api/medecins/${id}`);
+  }
+
   updateMedecin(
     id: number,
     body: { adresse: string; tel: string | null }

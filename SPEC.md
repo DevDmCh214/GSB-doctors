@@ -272,10 +272,47 @@ GET   /api/dashboard
 
 /rapports/:id           Auth guard — report detail (read mode)
                         Shows date, motif, bilan, echantillons list with "i" info button per drug
+                        Echantillons count = sum of all quantities (not number of distinct drugs)
+                        Each echantillon row shows quantity (e.g. "x3")
                         Edit button → /rapports/:id/edit
 
 /rapports/:id/edit      Auth guard — edit report, same layout as /rapports/new pre-filled
 ```
+
+---
+
+## Data Validation
+
+### Registration (`POST /api/auth/register`)
+| Field         | Rule                                              |
+|---------------|---------------------------------------------------|
+| nom           | Required, max 30 chars                            |
+| prenom        | Required, max 30 chars                            |
+| login (pseudo)| Required, max 20 chars, must be unique            |
+| mdp           | Required, min 4 chars                             |
+| adresse       | Optional, max 30 chars                            |
+| cp            | Optional, must be exactly 5 digits (`/^\d{5}$/`)  |
+| ville         | Optional, max 30 chars                            |
+| dateEmbauche  | Optional, valid ISO date string                   |
+
+### Rapports (`POST /api/rapports`, `PUT /api/rapports/:id`)
+| Field         | Rule                                              |
+|---------------|---------------------------------------------------|
+| idMedecin     | Required (POST only), must reference existing médecin |
+| date          | Required, valid date                              |
+| motif         | Required, non-empty after trim, max 100 chars     |
+| bilan         | Required, non-empty after trim, max 100 chars     |
+| echantillons  | Array; each entry must have `idMedicament` (non-empty) and `quantite` (>= 1) |
+
+### Médecin edit (`PATCH /api/medecins/:id`)
+| Field   | Rule                                                        |
+|---------|-------------------------------------------------------------|
+| adresse | Required, non-empty after trim, max 80 chars                |
+| tel     | Optional, max 15 chars, only digits/spaces/`+`/`-`/`.`/`()`  |
+
+### Frontend validation
+All forms perform client-side validation matching backend rules before submitting.
+Errors are shown inline. Server-side errors from the API are also displayed if they reach the backend.
 
 ---
 
@@ -316,6 +353,8 @@ API_URL=http://localhost:3001
 - Angular standalone components only (no NgModules), Router with canActivate auth guard
 - Error messages returned in French to match the UI language
 - Medicament detail appears as a small popup/tooltip modal (no dedicated page)
+- Echantillons count on rapport detail/form = sum of quantities across all drugs, not number of distinct drug types
+- Input validation on both frontend (immediate feedback) and backend (authoritative)
 
 ---
 
@@ -324,7 +363,6 @@ API_URL=http://localhost:3001
 - No email verification or password reset
 - No file uploads or image handling
 - No real-time / WebSocket features
-- No unit or e2e tests
 - No role-based access control (all visiteurs have identical permissions)
 - No mobile responsive design (desktop only)
 - No admin panel
