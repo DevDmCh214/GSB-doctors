@@ -103,19 +103,26 @@ router.post('/register', async (req, res, next) => {
     const visiteur = await prisma.visiteur.create({
       data: {
         id,
-        nom,
-        prenom,
-        login,
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+        login: login.trim(),
         mdp: hash,
-        adresse,
-        cp,
-        ville,
+        adresse: adresse ? adresse.trim() : null,
+        cp: cp ? cp.trim() : null,
+        ville: ville ? ville.trim() : null,
         dateEmbauche: dateEmbauche ? new Date(dateEmbauche) : null,
+        timespan: 0,
       },
     })
     const payload = signAndSetCookie(res, visiteur)
     return res.status(201).json({ visiteur: payload })
   } catch (err) {
+    if (err.code === 'P2002') {
+      return res.status(400).json({ error: 'Ce pseudo est déjà utilisé.' })
+    }
+    if (err.code && err.code.startsWith('P')) {
+      return res.status(400).json({ error: 'Données invalides. Vérifiez les champs du formulaire.' })
+    }
     next(err)
   }
 })
