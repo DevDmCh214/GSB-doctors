@@ -541,7 +541,7 @@ DELETE FROM session WHERE is_active = FALSE;
 
 ---
 
-## Protection contre le brute-force (connexions)
+## Enregistrement des tentatives de connexion
 
 La table `connexions` enregistre chaque tentative de connexion (réussie ou échouée). Après **5 tentatives échouées** depuis la même adresse IP dans les 30 dernières secondes, l'IP est temporairement bloquée pendant **30 secondes**.
 
