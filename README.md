@@ -81,11 +81,11 @@ Le script `seed.js` :
 5. Les autres utilisateurs reçoivent le mot de passe par défaut `Gsb_User!01`
 6. Affiche un tableau récapitulatif des identifiants
 
-> **Important :** `npx prisma generate` est indispensable pour que le client Prisma reconnaisse les modèles `session` et `connexions` définis dans `schema.prisma`.
 
 ### 5. Générer les certificats HTTPS
 
 ```bash
+cd GSB-doctors
 node certs/generate.js
 ```
 
@@ -101,14 +101,12 @@ node src/index.js
 # → Backend running on https://localhost:3001
 ```
 
-Vérification :
 
-```bash
-curl -k https://localhost:3001/api/health
-# → {"ok":true}
-```
+> **Vérifier le HTTPS :** ouvrir `https://localhost:3001/api/health` dans le navigateur.  
+> Le navigateur affichera un avertissement de certificat auto-signé — c'est la preuve que la connexion est bien chiffrée via TLS.  
+> Cliquer sur l'icône du cadenas pour inspecter le certificat (CN=localhost).  
+> Une requête en `http://localhost:3001` échouera car le serveur ne sert que du HTTPS.
 
-> Le flag `-k` permet à curl d'accepter le certificat auto-signé.
 
 ### 7. Démarrer le frontend
 
@@ -159,12 +157,12 @@ Tests couverts :
 
 ## Identifiants de démonstration
 
-| Login | Mot de passe | Département | Notes |
-|-------|-------------|-------------|-------|
-| aribiA | `Gsb@2025!a` | 46 | Utilisateur principal, nombreux rapports |
-| ltusseau | `Pharma#L8x` | 46 | Même département |
-| fdaburon | `Visite$F94` | 94 | Département différent |
-| fdudouit | `Rapport&D7` | 23 | Autre région |
+| Login | Mot de passe |
+|-------|-------------|
+| aribiA | `Gsb@2025!a` |
+| ltusseau | `Pharma#L8x` |
+| fdaburon | `Visite$F94` | 
+| fdudouit | `Rapport&D7` |
 
 > Tous les autres utilisateurs ont le mot de passe : `Gsb_User!01`  
 > La liste complète des logins se trouve dans le bloc `INSERT INTO visiteur` du fichier `sql/sql.sql`.
