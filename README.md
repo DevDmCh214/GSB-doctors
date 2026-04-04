@@ -50,7 +50,7 @@ cd backend
 npm install
 ```
 
-Copier .env.exemple dans /backend et le rennomer en .env
+Copier .env.exemple dans /backend et le renommer en .env
 Variables d'environnement (`.env`) :
 
 ```env
