@@ -572,21 +572,6 @@ La table `connexions` enregistre chaque tentative de connexion (réussie ou éch
 }
 ```
 
-### Exemples de requêtes SQL
-
-```sql
--- Tentatives échouées par IP (dernières 24h)
-SELECT ip_address, COUNT(*) AS echecs
-FROM connexions
-WHERE success = FALSE AND attempted_at > NOW() - INTERVAL 24 HOUR
-GROUP BY ip_address ORDER BY echecs DESC;
-
--- Historique d'un visiteur
-SELECT * FROM connexions WHERE id_visiteur = 'a131' ORDER BY attempted_at DESC;
-
--- Ratio succès/échec global
-SELECT success, COUNT(*) AS total FROM connexions GROUP BY success;
-```
 
 ### Accès à la table via Docker
 
