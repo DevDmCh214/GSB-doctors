@@ -680,16 +680,13 @@ DELETE FROM audit_log;
 | Décision | Raison |
 |----------|--------|
 | JWT en cookie httpOnly + session serveur | Le cookie httpOnly empêche l'accès au token via JavaScript (protection XSS). La session serveur permet l'invalidation immédiate au logout et l'expiration automatique après 30 min |
-| `sameSite: lax` | Compatible avec les redirections tout en bloquant les requêtes cross-site (protection CSRF) |
-| Mots de passe hachés et salés (bcrypt, 10 rounds) | Chaque mot de passe est salé individuellement par bcrypt avant stockage. Colonne `mdp` en CHAR(60) pour accueillir le hash |
+| Mots de passe hachés et salés (bcrypt) | Chaque mot de passe est salé individuellement par bcrypt avant stockage. Colonne `mdp` pour accueillir le hash |
 | Politique de mot de passe stricte | Min. 8 caractères, majuscule, minuscule, chiffre et caractère spécial — validé côté client et serveur |
-| Rate limiting par IP (table `connexions`) | Après 5 échecs de connexion en 30 s, l'IP est bloquée 30 s avec compte à rebours côté client. Stocké en base sans dépendance externe (Redis, etc.) |
-| Prisma en mode `db pull` | Introspection du schéma MySQL existant sans migration destructive |
+| Rate limiting par IP (table `connexions`) | Après 5 échecs de connexion en 30 s, l'IP est bloquée 30 s |
+| Prisma en mode `db pull` | récupération du schéma MySQL existant sans migration destructive |
 | Transactions Prisma pour `offrir` | Garantit la cohérence : la création/suppression d'un rapport et de ses échantillons est atomique |
-| Composants Angular standalone | Pas de NgModules, tree-shaking optimisé, conforme aux recommandations Angular 17+ |
-| `APP_INITIALIZER` + `GET /api/auth/me` | Rehydrate l'état d'authentification au démarrage de l'application sans redirection inutile |
+| Composants Angular standalone | Pas de NgModules, conforme aux recommandations Angular 17+ |
 | Journal d'audit via triggers MySQL | Capture automatique et transparente de toutes les modifications (INSERT/UPDATE/DELETE) sur les tables métier, sans code applicatif supplémentaire |
-| Champs obligatoires marqués `*` | Indication visuelle sur les formulaires (login, inscription, rapport) pour distinguer les champs requis des champs optionnels |
 
 ---
 
