@@ -37,6 +37,8 @@ cd GSB-doctors
 
 ### 2. Lancer la base de données MySQL
 
+> VERIFIEZ QUE VOUS AVEZ LANCÉ DOCKER.
+
 ```bash
 docker-compose up -d
 ```
