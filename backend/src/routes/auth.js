@@ -14,6 +14,7 @@ const LOCKOUT_SECONDS = 30
 const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: 'lax',
+  secure: true,
   maxAge: SESSION_DURATION_MIN * 60 * 1000,
 }
 
@@ -262,7 +263,7 @@ router.post('/logout', auth, async (req, res) => {
   } catch {
     // Token may be invalid, proceed with cookie clearing
   }
-  res.cookie('token', '', { httpOnly: true, sameSite: 'lax', maxAge: 0 })
+  res.cookie('token', '', { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 0 })
   return res.status(200).json({ success: true })
 })
 

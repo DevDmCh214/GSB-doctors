@@ -80,22 +80,34 @@ Le script `seed.js` :
 4. Les autres utilisateurs reçoivent le mot de passe par défaut `Gsb_User!01`
 5. Affiche un tableau récapitulatif des identifiants
 
-### 5. Démarrer le backend
+### 5. Générer les certificats HTTPS
+
+```bash
+node certs/generate.js
+```
+
+Le script génère `certs/key.pem` et `certs/cert.pem` (certificat auto-signé pour `localhost`, valide 365 jours).  
+Il utilise `openssl` s'il est disponible (inclus dans Git Bash), sinon un générateur Node.js intégré.  
+Si les fichiers existent déjà, le script ne les régénère pas.
+
+### 6. Démarrer le backend
 
 ```bash
 cd backend
 node src/index.js
-# → Backend running on port 3001
+# → Backend running on https://localhost:3001
 ```
 
 Vérification :
 
 ```bash
-curl http://localhost:3001/api/health
+curl -k https://localhost:3001/api/health
 # → {"ok":true}
 ```
 
-### 6. Démarrer le frontend
+> Le flag `-k` permet à curl d'accepter le certificat auto-signé.
+
+### 7. Démarrer le frontend
 
 ```bash
 cd frontend
@@ -104,11 +116,14 @@ ng serve
 # → http://localhost:4200
 ```
 
+> Le frontend utilise un **proxy Angular** (`proxy.conf.json`) qui redirige les appels `/api` vers `https://localhost:3001`.  
+> Le navigateur ne voit jamais le certificat auto-signé — aucune alerte de sécurité.
+
 ---
 
 ## Tests
 
-### Backend (Jest + Supertest) — 50 tests
+### Backend (Jest + Supertest) — 58 tests
 
 ```bash
 cd backend
@@ -122,6 +137,7 @@ Tests couverts :
 - Rapports : validation POST (champs requis, longueurs, date invalide, échantillons), GET detail (404, 403, 200), DELETE (404, 403)
 - Médecins : PATCH validation (adresse requise, trop longue, tel invalide, succès), DELETE (404, succès)
 - Middleware auth : 401 sans cookie, 401 avec token invalide, 401 si session expirée
+- HTTPS : présence et validité des certificats PEM, réponse du serveur HTTPS, flag `Secure` sur les cookies de login et logout, flag `HttpOnly`
 - Health check
 
 ### Frontend (Karma + Jasmine) — 15 tests
@@ -164,7 +180,8 @@ Tests couverts :
 | Authentification | JWT + sessions serveur (cookie httpOnly, expiration 30 min) |
 | Hachage des mots de passe | bcrypt (haché et salé individuellement) |
 | Protection brute-force | Table `connexions` + blocage IP après 5 échecs (30 s) |
-| Communication HTTP | Angular HttpClient + services injectables |
+| HTTPS | Certificat auto-signé pour le développement, proxy Angular pour éviter les alertes navigateur |
+| Communication HTTP | Angular HttpClient + services injectables via proxy `/api` → `https://localhost:3001` |
 
 ---
 
@@ -174,6 +191,10 @@ Tests couverts :
 GSB-doctors/
 │
 ├── docker-compose.yml          # MySQL 8 en conteneur
+├── certs/
+│   ├── generate.js             # Script de génération des certificats auto-signés
+│   ├── key.pem                 # Clé privée RSA (générée)
+│   └── cert.pem                # Certificat auto-signé pour localhost (généré)
 ├── sql/
 │   ├── sql.sql                 # Dump complet de la base gsbrapports
 │   ├── audit_log.sql           # Définition de la table audit_log
@@ -184,7 +205,7 @@ GSB-doctors/
 │   ├── .env                    # Variables d'environnement (non versionné)
 │   ├── .env.example            # Modèle de configuration
 │   ├── src/
-│   │   ├── index.js            # Point d'entrée Express (CORS, cookies, routes)
+│   │   ├── index.js            # Point d'entrée HTTPS (charge les certificats, démarre le serveur)
 │   │   ├── middleware/
 │   │   │   └── auth.js         # Middleware JWT : vérifie le cookie, injecte req.visiteur
 │   │   ├── lib/
@@ -200,6 +221,7 @@ GSB-doctors/
 │       └── seed.js             # Script d'initialisation des données
 │
 ├── frontend/
+│   ├── proxy.conf.json         # Proxy Angular : /api → https://localhost:3001
 │   └── src/app/
 │       ├── app.component.ts    # Racine : navbar + router-outlet
 │       ├── app.config.ts       # Bootstrap Angular (APP_INITIALIZER, intercepteur)
@@ -240,7 +262,7 @@ GSB-doctors/
 
 ## Documentation de l'API
 
-Base URL : `http://localhost:3001`
+Base URL : `https://localhost:3001`
 
 Toutes les routes protégées nécessitent un cookie JWT valide (`token`).  
 Les erreurs retournent toujours : `{ "error": "Message en français" }` + code HTTP approprié.
@@ -679,6 +701,9 @@ DELETE FROM audit_log;
 
 | Décision | Raison |
 |----------|--------|
+| HTTPS obligatoire (backend) | Le backend Express sert uniquement en HTTPS via certificat auto-signé. Les cookies sont marqués `Secure` et ne transitent jamais en clair |
+| Proxy Angular (`proxy.conf.json`) | Le frontend proxy les appels `/api` vers le backend HTTPS. Le navigateur ne voit pas le certificat auto-signé — aucune alerte de sécurité |
+| Certificats générés via script Node.js | `node certs/generate.js` génère les certificats sans outil externe (utilise openssl si disponible, sinon Node.js natif). Fonctionne sur Windows, macOS et Linux |
 | JWT en cookie httpOnly + session serveur | Le cookie httpOnly empêche l'accès au token via JavaScript (protection XSS). La session serveur permet l'invalidation immédiate au logout et l'expiration automatique après 30 min |
 | Mots de passe hachés et salés (bcrypt) | Chaque mot de passe est salé individuellement par bcrypt avant stockage. Colonne `mdp` pour accueillir le hash |
 | Politique de mot de passe stricte | Min. 8 caractères, majuscule, minuscule, chiffre et caractère spécial — validé côté client et serveur |
