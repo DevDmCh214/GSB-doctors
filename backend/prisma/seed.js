@@ -51,36 +51,67 @@ async function main() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `)
 
-  // Create session table
-  await connection.query(`
-    CREATE TABLE IF NOT EXISTS session (
-      id          VARCHAR(36)  NOT NULL PRIMARY KEY,
-      id_visiteur CHAR(4)      NOT NULL,
-      ip_address  VARCHAR(45)  NOT NULL,
-      created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      expires_at  DATETIME     NOT NULL,
-      is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
-      CONSTRAINT fk_session_visiteur FOREIGN KEY (id_visiteur) REFERENCES visiteur(id) ON DELETE CASCADE,
-      INDEX idx_session_visiteur (id_visiteur),
-      INDEX idx_session_active (is_active, expires_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `)
-  console.log('✅ Session table created')
+  // Create session table (id_visiteur uses latin1 to match visiteur.id charset)
+  try {
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS session (
+        id          VARCHAR(36)  NOT NULL PRIMARY KEY,
+        id_visiteur CHAR(4)      CHARACTER SET latin1 NOT NULL,
+        ip_address  VARCHAR(45)  NOT NULL,
+        created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expires_at  DATETIME     NOT NULL,
+        is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+        CONSTRAINT fk_session_visiteur FOREIGN KEY (id_visiteur) REFERENCES visiteur(id) ON DELETE CASCADE,
+        INDEX idx_session_visiteur (id_visiteur),
+        INDEX idx_session_active (is_active, expires_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `)
+    console.log('✅ Session table created')
+  } catch (err) {
+    if (err.message.includes('already exists')) {
+      console.log('✅ Session table already exists')
+    } else {
+      console.error('❌ Failed to create session table:', err.message)
+      throw err
+    }
+  }
 
-  // Create connexions table
-  await connection.query(`
-    CREATE TABLE IF NOT EXISTS connexions (
-      id             INT AUTO_INCREMENT PRIMARY KEY,
-      ip_address     VARCHAR(45)  NOT NULL,
-      id_visiteur    CHAR(4)      NULL,
-      attempted_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      success        BOOLEAN      NOT NULL DEFAULT FALSE,
-      CONSTRAINT fk_connexions_visiteur FOREIGN KEY (id_visiteur) REFERENCES visiteur(id) ON DELETE SET NULL,
-      INDEX idx_connexions_ip (ip_address, attempted_at),
-      INDEX idx_connexions_visiteur (id_visiteur)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `)
-  console.log('✅ Connexions table created')
+  // Create connexions table (id_visiteur uses latin1 to match visiteur.id charset)
+  try {
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS connexions (
+        id             INT AUTO_INCREMENT PRIMARY KEY,
+        ip_address     VARCHAR(45)  NOT NULL,
+        id_visiteur    CHAR(4)      CHARACTER SET latin1 NULL,
+        attempted_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        success        BOOLEAN      NOT NULL DEFAULT FALSE,
+        CONSTRAINT fk_connexions_visiteur FOREIGN KEY (id_visiteur) REFERENCES visiteur(id) ON DELETE SET NULL,
+        INDEX idx_connexions_ip (ip_address, attempted_at),
+        INDEX idx_connexions_visiteur (id_visiteur)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `)
+    console.log('✅ Connexions table created')
+  } catch (err) {
+    if (err.message.includes('already exists')) {
+      console.log('✅ Connexions table already exists')
+    } else {
+      console.error('❌ Failed to create connexions table:', err.message)
+      throw err
+    }
+  }
+
+  // Verify tables were actually created
+  const [tables] = await connection.query(
+    `SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'gsbrapports' AND TABLE_NAME IN ('session', 'connexions')`
+  )
+  const tableNames = tables.map(t => t.TABLE_NAME)
+  if (!tableNames.includes('session')) {
+    throw new Error('Table "session" was not created — check MySQL errors above')
+  }
+  if (!tableNames.includes('connexions')) {
+    throw new Error('Table "connexions" was not created — check MySQL errors above')
+  }
+  console.log('✅ Tables session et connexions vérifiées')
 
   // Create triggers (each sent as a single statement to mysql2)
   const triggers = [

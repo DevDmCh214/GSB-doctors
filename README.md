@@ -64,21 +64,24 @@ PORT=3001
 ### 4. Initialiser la base de données
 
 ```bash
-# Introspection du schéma existant (pas de migration destructive)
 cd backend
 
-npx prisma db pull
-
-# Peupler la base avec les données de démonstration
+# Peupler la base avec les données de démonstration et créer les tables
 node prisma/seed.js
+
+# Générer le client Prisma à partir du schéma
+npx prisma generate
 ```
 
 Le script `seed.js` :
 1. Charge le dump SQL complet (`/sql/sql.sql`) dans la base
 2. Élargit la colonne `visiteur.mdp` à `CHAR(60)` pour accueillir les hachages bcrypt
-3. Attribue un mot de passe unique à chaque utilisateur principal (voir tableau ci-dessous)
-4. Les autres utilisateurs reçoivent le mot de passe par défaut `Gsb_User!01`
-5. Affiche un tableau récapitulatif des identifiants
+3. Crée les tables `session`, `connexions` et `audit_log` (avec triggers)
+4. Attribue un mot de passe unique à chaque utilisateur principal (voir tableau ci-dessous)
+5. Les autres utilisateurs reçoivent le mot de passe par défaut `Gsb_User!01`
+6. Affiche un tableau récapitulatif des identifiants
+
+> **Important :** `npx prisma generate` est indispensable pour que le client Prisma reconnaisse les modèles `session` et `connexions` définis dans `schema.prisma`.
 
 ### 5. Générer les certificats HTTPS
 

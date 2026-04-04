@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS connexions (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   ip_address     VARCHAR(45)  NOT NULL COMMENT 'IPv4 or IPv6 address',
-  id_visiteur    CHAR(4)      NULL     COMMENT 'NULL if login does not match any user',
+  id_visiteur    CHAR(4)      CHARACTER SET latin1 NULL COMMENT 'NULL if login does not match any user',
   attempted_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   success        BOOLEAN      NOT NULL DEFAULT FALSE,
   CONSTRAINT fk_connexions_visiteur FOREIGN KEY (id_visiteur) REFERENCES visiteur(id) ON DELETE SET NULL

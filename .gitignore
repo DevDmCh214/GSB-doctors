@@ -61,6 +61,16 @@ desktop.ini
 *.sw?
 
 # ========================
+# TLS certificates (generated per machine via node certs/generate.js)
+# ========================
+certs/*.pem
+
+# ========================
+# Claude Code
+# ========================
+.claude/
+
+# ========================
 # Testing
 # ========================
 /coverage/

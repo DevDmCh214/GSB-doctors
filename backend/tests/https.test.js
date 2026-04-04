@@ -28,6 +28,14 @@ const app = require('../src/app')
 describe('TLS certificates', () => {
   const certDir = path.join(__dirname, '../../certs')
 
+  beforeAll(() => {
+    // Generate certs if they don't exist (same as node certs/generate.js)
+    if (!fs.existsSync(path.join(certDir, 'key.pem')) || !fs.existsSync(path.join(certDir, 'cert.pem'))) {
+      const { execSync } = require('child_process')
+      execSync('node certs/generate.js', { cwd: path.join(__dirname, '../..') })
+    }
+  })
+
   it('should have key.pem in certs/', () => {
     expect(fs.existsSync(path.join(certDir, 'key.pem'))).toBe(true)
   })
