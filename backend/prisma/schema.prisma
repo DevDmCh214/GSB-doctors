@@ -76,6 +76,33 @@ model visiteur {
   timespan     BigInt
   ticket       String?   @db.VarChar(50)
   rapport      rapport[]
+  session      session[]
+  connexions   connexions[]
+}
+
+model session {
+  id          String   @id @db.VarChar(36)
+  id_visiteur String   @db.Char(4)
+  ip_address  String   @db.VarChar(45)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  expires_at  DateTime @db.DateTime(0)
+  is_active   Boolean  @default(true)
+  visiteur    visiteur @relation(fields: [id_visiteur], references: [id], onDelete: Cascade)
+
+  @@index([id_visiteur], map: "idx_session_visiteur")
+  @@index([is_active, expires_at], map: "idx_session_active")
+}
+
+model connexions {
+  id           Int      @id @default(autoincrement())
+  ip_address   String   @db.VarChar(45)
+  id_visiteur  String?  @db.Char(4)
+  attempted_at DateTime @default(now()) @db.DateTime(0)
+  success      Boolean  @default(false)
+  visiteur     visiteur? @relation(fields: [id_visiteur], references: [id], onDelete: SetNull)
+
+  @@index([ip_address, attempted_at], map: "idx_connexions_ip")
+  @@index([id_visiteur], map: "idx_connexions_visiteur")
 }
 
 model audit_log {

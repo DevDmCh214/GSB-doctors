@@ -1,37 +1,129 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
 const prisma = require('../lib/prisma')
 const auth = require('../middleware/auth')
 
 const router = express.Router()
 
+const SESSION_DURATION_MIN = 30
+const MAX_FAILED_ATTEMPTS = 5
+const LOCKOUT_SECONDS = 30
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   sameSite: 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  maxAge: SESSION_DURATION_MIN * 60 * 1000,
 }
 
-function signAndSetCookie(res, visiteur) {
-  const payload = { id: visiteur.id, nom: visiteur.nom, prenom: visiteur.prenom, cp: visiteur.cp }
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' })
+function getClientIp(req) {
+  return req.ip || req.connection?.remoteAddress || '0.0.0.0'
+}
+
+function signAndSetCookie(res, visiteur, sessionId) {
+  const payload = { id: visiteur.id, nom: visiteur.nom, prenom: visiteur.prenom, cp: visiteur.cp, sessionId }
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: `${SESSION_DURATION_MIN}m` })
   res.cookie('token', token, COOKIE_OPTIONS)
-  return payload
+  return { id: visiteur.id, nom: visiteur.nom, prenom: visiteur.prenom, cp: visiteur.cp }
+}
+
+async function checkRateLimit(ip) {
+  const windowStart = new Date(Date.now() - LOCKOUT_SECONDS * 1000)
+
+  // Count recent failed attempts from this IP
+  const recentFailed = await prisma.connexions.count({
+    where: {
+      ip_address: ip,
+      success: false,
+      attempted_at: { gte: windowStart },
+    },
+  })
+
+  if (recentFailed >= MAX_FAILED_ATTEMPTS) {
+    // Find the most recent failed attempt to calculate remaining lockout
+    const lastFailed = await prisma.connexions.findFirst({
+      where: {
+        ip_address: ip,
+        success: false,
+        attempted_at: { gte: windowStart },
+      },
+      orderBy: { attempted_at: 'desc' },
+    })
+
+    if (lastFailed) {
+      const unlockAt = new Date(lastFailed.attempted_at.getTime() + LOCKOUT_SECONDS * 1000)
+      const remainingMs = unlockAt.getTime() - Date.now()
+      if (remainingMs > 0) {
+        return { locked: true, remainingSeconds: Math.ceil(remainingMs / 1000) }
+      }
+    }
+  }
+
+  return { locked: false, remainingSeconds: 0 }
+}
+
+async function recordAttempt(ip, visiteurId, success) {
+  await prisma.connexions.create({
+    data: {
+      ip_address: ip,
+      id_visiteur: visiteurId,
+      success,
+    },
+  })
 }
 
 // POST /api/auth/login
 router.post('/login', async (req, res, next) => {
   try {
+    const ip = getClientIp(req)
+
+    // Check rate limit
+    const rateLimit = await checkRateLimit(ip)
+    if (rateLimit.locked) {
+      return res.status(429).json({
+        error: `Trop de tentatives. Réessayez dans ${rateLimit.remainingSeconds} secondes.`,
+        remainingSeconds: rateLimit.remainingSeconds,
+      })
+    }
+
     const { login, mdp } = req.body
     const visiteur = await prisma.visiteur.findFirst({ where: { login } })
     if (!visiteur) {
+      await recordAttempt(ip, null, false)
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
     const match = await bcrypt.compare(mdp, visiteur.mdp)
     if (!match) {
+      await recordAttempt(ip, visiteur.id, false)
+
+      // Check if this attempt triggers lockout
+      const newRateLimit = await checkRateLimit(ip)
+      if (newRateLimit.locked) {
+        return res.status(429).json({
+          error: `Trop de tentatives. Réessayez dans ${newRateLimit.remainingSeconds} secondes.`,
+          remainingSeconds: newRateLimit.remainingSeconds,
+        })
+      }
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
-    const payload = signAndSetCookie(res, visiteur)
+
+    // Record successful attempt
+    await recordAttempt(ip, visiteur.id, true)
+
+    // Create server-side session
+    const sessionId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + SESSION_DURATION_MIN * 60 * 1000)
+    await prisma.session.create({
+      data: {
+        id: sessionId,
+        id_visiteur: visiteur.id,
+        ip_address: ip,
+        expires_at: expiresAt,
+      },
+    })
+
+    const payload = signAndSetCookie(res, visiteur, sessionId)
     return res.status(200).json({ visiteur: payload })
   } catch (err) {
     next(err)
@@ -53,8 +145,20 @@ router.post('/register', async (req, res, next) => {
     if (!login || !login.trim()) {
       return res.status(400).json({ error: 'Le pseudo est requis.' })
     }
-    if (!mdp || mdp.length < 4) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 4 caractères.' })
+    if (!mdp || mdp.length < 8) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères.' })
+    }
+    if (!/[a-z]/.test(mdp)) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins une lettre minuscule.' })
+    }
+    if (!/[A-Z]/.test(mdp)) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins une lettre majuscule.' })
+    }
+    if (!/[0-9]/.test(mdp)) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins un chiffre.' })
+    }
+    if (!/[^a-zA-Z0-9]/.test(mdp)) {
+      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins un caractère spécial.' })
     }
 
     // Field length validations (match DB column sizes)
@@ -114,7 +218,21 @@ router.post('/register', async (req, res, next) => {
         timespan: 0,
       },
     })
-    const payload = signAndSetCookie(res, visiteur)
+
+    // Create session for the newly registered user
+    const ip = getClientIp(req)
+    const sessionId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + SESSION_DURATION_MIN * 60 * 1000)
+    await prisma.session.create({
+      data: {
+        id: sessionId,
+        id_visiteur: visiteur.id,
+        ip_address: ip,
+        expires_at: expiresAt,
+      },
+    })
+
+    const payload = signAndSetCookie(res, visiteur, sessionId)
     return res.status(201).json({ visiteur: payload })
   } catch (err) {
     if (err.code === 'P2002') {
@@ -128,7 +246,22 @@ router.post('/register', async (req, res, next) => {
 })
 
 // POST /api/auth/logout
-router.post('/logout', auth, (req, res) => {
+router.post('/logout', auth, async (req, res) => {
+  try {
+    // Invalidate the server-side session
+    const token = req.cookies?.token
+    if (token) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET)
+      if (payload.sessionId) {
+        await prisma.session.update({
+          where: { id: payload.sessionId },
+          data: { is_active: false },
+        })
+      }
+    }
+  } catch {
+    // Token may be invalid, proceed with cookie clearing
+  }
   res.cookie('token', '', { httpOnly: true, sameSite: 'lax', maxAge: 0 })
   return res.status(200).json({ success: true })
 })

@@ -11,6 +11,11 @@ jest.mock('../src/lib/prisma', () => ({
   },
   rapport: { findMany: jest.fn(), deleteMany: jest.fn() },
   offrir: { deleteMany: jest.fn() },
+  session: {
+    findUnique: jest.fn().mockResolvedValue(null),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
   $transaction: jest.fn(cb => cb({
     offrir: { deleteMany: jest.fn() },
     rapport: { deleteMany: jest.fn() },

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -A 30 \"CREATE TABLE \\\\`visiteur\\\\`\" /c/GSB-doctors/sql/sql.sql)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}

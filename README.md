@@ -108,7 +108,7 @@ ng serve
 
 ## Tests
 
-### Backend (Jest + Supertest) — 33 tests
+### Backend (Jest + Supertest) — 50 tests
 
 ```bash
 cd backend
@@ -116,10 +116,12 @@ npm test
 ```
 
 Tests couverts :
-- Authentification : login (identifiants invalides, valides), register (validations : nom, prénom, mdp, cp, login unique, longueur max)
+- Authentification : login (identifiants invalides, valides), register (validations : nom, prénom, politique mot de passe, cp, login unique, longueur max, inscription sans champs optionnels)
+- Sessions : création à la connexion et à l'inscription, rejet si session inactive ou expirée, accès autorisé si session valide, invalidation au logout
+- Connexions / Rate limiting : enregistrement des tentatives échouées (avec/sans visiteur), enregistrement des tentatives réussies, blocage après 5 échecs (429), déblocage après expiration du timeout, déclenchement du blocage à la 5e tentative
 - Rapports : validation POST (champs requis, longueurs, date invalide, échantillons), GET detail (404, 403, 200), DELETE (404, 403)
 - Médecins : PATCH validation (adresse requise, trop longue, tel invalide, succès), DELETE (404, succès)
-- Middleware auth : 401 sans cookie, 401 avec token invalide
+- Middleware auth : 401 sans cookie, 401 avec token invalide, 401 si session expirée
 - Health check
 
 ### Frontend (Karma + Jasmine) — 15 tests
@@ -159,7 +161,9 @@ Tests couverts :
 | Backend | Express.js (Node 20) |
 | Base de données | MySQL 8 via Docker |
 | ORM | Prisma 5 (mode `db pull`, pas de migrations) |
-| Authentification | JWT stocké en cookie httpOnly |
+| Authentification | JWT + sessions serveur (cookie httpOnly, expiration 30 min) |
+| Hachage des mots de passe | bcrypt (haché et salé individuellement) |
+| Protection brute-force | Table `connexions` + blocage IP après 5 échecs (30 s) |
 | Communication HTTP | Angular HttpClient + services injectables |
 
 ---
@@ -171,7 +175,10 @@ GSB-doctors/
 │
 ├── docker-compose.yml          # MySQL 8 en conteneur
 ├── sql/
-│   └── sql.sql                 # Dump complet de la base gsbrapports
+│   ├── sql.sql                 # Dump complet de la base gsbrapports
+│   ├── audit_log.sql           # Définition de la table audit_log
+│   ├── session.sql             # Définition de la table session
+│   └── connexions.sql          # Définition de la table connexions
 │
 ├── backend/
 │   ├── .env                    # Variables d'environnement (non versionné)
@@ -254,13 +261,22 @@ Connexion d'un visiteur. Pose le cookie httpOnly `token`.
 ```
 
 #### `POST /api/auth/register`
-Inscription d'un nouveau visiteur.
+Inscription d'un nouveau visiteur. Les champs `adresse`, `cp`, `ville` et `dateEmbauche` sont optionnels.
+
+**Politique de mot de passe :** le mot de passe doit respecter toutes les règles suivantes :
+- Au moins **8 caractères**
+- Au moins une **lettre minuscule** (a-z)
+- Au moins une **lettre majuscule** (A-Z)
+- Au moins un **chiffre** (0-9)
+- Au moins un **caractère spécial** (ex. `!@#$%^&*`)
+
+Les mots de passe sont **hachés et salés** individuellement avec bcrypt (10 rounds) avant stockage en base.
 
 ```json
 // Corps
 {
   "nom": "Dupont", "prenom": "Jean", "login": "jdupont",
-  "mdp": "motdepasse", "adresse": "1 rue de la Paix",
+  "mdp": "MonPass1!", "adresse": "1 rue de la Paix",
   "cp": "75001", "ville": "Paris", "dateEmbauche": "2024-01-15"
 }
 // Réponse 201 : même forme que login
@@ -440,10 +456,13 @@ Supprimer un rapport et ses échantillons (transaction). Réponse : `{ "success"
 
 ```
 visiteur ──< rapport >── medecin
-               │
-              offrir
-               │
-           medicament >── famille
+    │          │
+    │        offrir
+    │          │
+    │      medicament >── famille
+    │
+    ├──< session
+    └──< connexions
 ```
 
 | Table | Description |
@@ -454,6 +473,8 @@ visiteur ──< rapport >── medecin
 | `medicament` | Catalogue des médicaments |
 | `famille` | Famille thérapeutique d'un médicament |
 | `offrir` | Table de jonction rapport ↔ médicament (avec quantité) |
+| `session` | Sessions serveur liées aux JWT (invalidation, expiration 30 min) |
+| `connexions` | Tentatives de connexion par IP (protection brute-force) |
 | `audit_log` | Journal d'audit automatique (via triggers MySQL) |
 
 ### Relations clés
@@ -462,6 +483,89 @@ visiteur ──< rapport >── medecin
 - Un `rapport` peut contenir **plusieurs** `medicament` via la table `offrir`
 - Un `medicament` appartient à **une** `famille`
 - La suppression d'un rapport supprime d'abord ses lignes `offrir` (transaction)
+
+---
+
+## Sessions serveur
+
+Les sessions côté serveur complètent l'authentification JWT pour permettre l'invalidation immédiate (logout) et l'expiration automatique après **30 minutes** d'inactivité.
+
+### Fonctionnement
+
+1. **Connexion** : un enregistrement `session` est créé avec un UUID. Cet UUID est inclus dans le payload du JWT.
+2. **Chaque requête authentifiée** : le middleware vérifie que la session est toujours active (`is_active = true`) et non expirée (`expires_at > NOW()`).
+3. **Déconnexion** : la session est marquée comme inactive (`is_active = false`), rendant le JWT immédiatement invalide.
+4. **Expiration** : toute session dont `expires_at` est dépassé est automatiquement rejetée et désactivée.
+
+### Structure de la table `session`
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `id` | VARCHAR(36) | UUID v4, clé primaire (stocké dans le JWT) |
+| `id_visiteur` | CHAR(4) | Visiteur propriétaire de la session |
+| `ip_address` | VARCHAR(45) | Adresse IP du client (IPv4 ou IPv6) |
+| `created_at` | DATETIME | Date de création |
+| `expires_at` | DATETIME | Date d'expiration (30 min après création) |
+| `is_active` | BOOLEAN | `true` = session valide, `false` = invalidée |
+
+### Exemples de requêtes SQL
+
+```sql
+-- Sessions actives d'un visiteur
+SELECT * FROM session WHERE id_visiteur = 'a131' AND is_active = TRUE AND expires_at > NOW();
+
+-- Historique des sessions
+SELECT * FROM session ORDER BY created_at DESC LIMIT 20;
+```
+
+---
+
+## Protection contre le brute-force (connexions)
+
+La table `connexions` enregistre chaque tentative de connexion (réussie ou échouée). Après **5 tentatives échouées** depuis la même adresse IP dans les 30 dernières secondes, l'IP est temporairement bloquée pendant **30 secondes**.
+
+### Fonctionnement
+
+1. Chaque tentative de connexion (succès ou échec) crée un enregistrement dans `connexions`.
+2. Avant chaque tentative, le serveur compte les échecs récents depuis la même IP.
+3. Si 5 échecs ou plus sont détectés dans les 30 dernières secondes, la requête est rejetée avec un code **429** et le nombre de secondes restantes avant le déblocage.
+4. L'écran de connexion affiche un **compte à rebours** pendant le blocage.
+
+### Structure de la table `connexions`
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `id` | INT AUTO_INCREMENT | Identifiant unique |
+| `ip_address` | VARCHAR(45) | Adresse IP du client |
+| `id_visiteur` | CHAR(4) NULL | Visiteur ciblé (NULL si le login n'existe pas) |
+| `attempted_at` | DATETIME | Horodatage de la tentative |
+| `success` | BOOLEAN | `true` = connexion réussie, `false` = échec |
+
+### Réponse en cas de blocage
+
+```json
+// HTTP 429 Too Many Requests
+{
+  "error": "Trop de tentatives. Réessayez dans 25 secondes.",
+  "remainingSeconds": 25
+}
+```
+
+### Exemples de requêtes SQL
+
+```sql
+-- Tentatives échouées par IP (dernières 24h)
+SELECT ip_address, COUNT(*) AS echecs
+FROM connexions
+WHERE success = FALSE AND attempted_at > NOW() - INTERVAL 24 HOUR
+GROUP BY ip_address ORDER BY echecs DESC;
+
+-- Historique d'un visiteur
+SELECT * FROM connexions WHERE id_visiteur = 'a131' ORDER BY attempted_at DESC;
+
+-- Ratio succès/échec global
+SELECT success, COUNT(*) AS total FROM connexions GROUP BY success;
+```
 
 ---
 
@@ -535,11 +639,12 @@ DELETE FROM audit_log;
 
 | Décision | Raison |
 |----------|--------|
-| JWT en cookie httpOnly | Protection XSS : le token n'est pas accessible en JavaScript |
+| JWT en cookie httpOnly + session serveur | Protection XSS + invalidation immédiate au logout. La session expire après 30 min |
 | `sameSite: lax` | Compatible avec les redirections tout en bloquant les requêtes cross-site |
+| Rate limiting par IP (table `connexions`) | 5 échecs = blocage 30 s. Protège contre le brute-force sans dépendance externe (Redis, etc.) |
 | Prisma en mode `db pull` | La base existante ne doit pas être modifiée — introspection sans migration |
 | Colonne `mdp` élargie à CHAR(60) | Les hachages bcrypt font 60 caractères, la colonne originale était trop courte |
-| Filtre département par substring du CP | `parseInt(cp.substring(0, 2))` donne le numéro de département pour les CP à 5 chiffres |
+| Politique de mot de passe stricte | Min. 8 car., majuscule, minuscule, chiffre, caractère spécial — validé côté client et serveur |
 | Transactions Prisma pour `offrir` | Garantit la cohérence : si l'insertion d'un échantillon échoue, tout est annulé |
 | Composants Angular standalone | Pas de NgModules, tree-shaking optimisé, conforme Angular 17+ |
 | `APP_INITIALIZER` + `GET /api/auth/me` | Rehydrate l'état d'authentification au démarrage sans redirection inutile |

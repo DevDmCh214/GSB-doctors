@@ -8,6 +8,16 @@ jest.mock('../src/lib/prisma', () => ({
     findUnique: jest.fn(),
     create: jest.fn(),
   },
+  session: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+  connexions: {
+    count: jest.fn().mockResolvedValue(0),
+    findFirst: jest.fn().mockResolvedValue(null),
+    create: jest.fn().mockResolvedValue({}),
+  },
 }))
 
 const prisma = require('../src/lib/prisma')
@@ -38,12 +48,14 @@ describe('POST /api/auth/login', () => {
   it('should return 200 and set cookie on valid login', async () => {
     const hash = await bcrypt.hash('correct', 10)
     prisma.visiteur.findFirst.mockResolvedValue({ id: 'ab00', nom: 'A', prenom: 'B', mdp: hash, cp: '75001' })
+    prisma.session.create.mockResolvedValue({ id: 'test-session-id' })
     const res = await request(app)
       .post('/api/auth/login')
       .send({ login: 'user', mdp: 'correct' })
     expect(res.status).toBe(200)
     expect(res.body.visiteur).toHaveProperty('id', 'ab00')
     expect(res.headers['set-cookie']).toBeDefined()
+    expect(prisma.session.create).toHaveBeenCalled()
   })
 })
 
@@ -53,7 +65,7 @@ describe('POST /api/auth/register', () => {
   it('should return 400 if nom is missing', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ prenom: 'Jean', login: 'jd', mdp: 'Test1234' })
+      .send({ prenom: 'Jean', login: 'jd', mdp: 'Test123!' })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/nom/)
   })
@@ -61,7 +73,7 @@ describe('POST /api/auth/register', () => {
   it('should return 400 if prenom is missing', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ nom: 'Dupont', login: 'jd', mdp: 'Test1234' })
+      .send({ nom: 'Dupont', login: 'jd', mdp: 'Test123!' })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/prénom/)
   })
@@ -69,15 +81,47 @@ describe('POST /api/auth/register', () => {
   it('should return 400 if password too short', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'ab' })
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'Ab1!' })
     expect(res.status).toBe(400)
-    expect(res.body.error).toMatch(/4 caractères/)
+    expect(res.body.error).toMatch(/8 caractères/)
+  })
+
+  it('should return 400 if password has no lowercase', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'ABCD1234!' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/minuscule/)
+  })
+
+  it('should return 400 if password has no uppercase', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'abcd1234!' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/majuscule/)
+  })
+
+  it('should return 400 if password has no digit', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'Abcdefgh!' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/chiffre/)
+  })
+
+  it('should return 400 if password has no special character', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'Abcdefg1' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/spécial/)
   })
 
   it('should return 400 if code postal is invalid', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'Test1234', cp: '123' })
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jd', mdp: 'Test123!', cp: '123' })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/5 chiffres/)
   })
@@ -86,7 +130,7 @@ describe('POST /api/auth/register', () => {
     prisma.visiteur.findFirst.mockResolvedValue({ id: 'ab00' })
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ nom: 'Dupont', prenom: 'Jean', login: 'existing', mdp: 'Test1234' })
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'existing', mdp: 'Test123!' })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/pseudo/)
   })
@@ -97,9 +141,25 @@ describe('POST /api/auth/register', () => {
     prisma.visiteur.create.mockResolvedValue({
       id: 'dj00', nom: 'Dupont', prenom: 'Jean', cp: '75001'
     })
+    prisma.session.create.mockResolvedValue({ id: 'test-session-id' })
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jdupont', mdp: 'Test1234', cp: '75001' })
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jdupont', mdp: 'Test123!', cp: '75001' })
+    expect(res.status).toBe(201)
+    expect(res.body.visiteur).toHaveProperty('id', 'dj00')
+    expect(prisma.session.create).toHaveBeenCalled()
+  })
+
+  it('should return 201 with only required fields (no optional info)', async () => {
+    prisma.visiteur.findFirst.mockResolvedValue(null)
+    prisma.visiteur.findUnique.mockResolvedValue(null)
+    prisma.visiteur.create.mockResolvedValue({
+      id: 'dj00', nom: 'Dupont', prenom: 'Jean', cp: null
+    })
+    prisma.session.create.mockResolvedValue({ id: 'test-session-id' })
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ nom: 'Dupont', prenom: 'Jean', login: 'jdupont', mdp: 'Test123!' })
     expect(res.status).toBe(201)
     expect(res.body.visiteur).toHaveProperty('id', 'dj00')
   })
@@ -107,7 +167,7 @@ describe('POST /api/auth/register', () => {
   it('should return 400 if nom too long', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ nom: 'A'.repeat(31), prenom: 'Jean', login: 'jd', mdp: 'Test1234' })
+      .send({ nom: 'A'.repeat(31), prenom: 'Jean', login: 'jd', mdp: 'Test123!' })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/nom.*30/)
   })

@@ -19,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
             <!-- Row 1: Nom | Prénom -->
             <div class="flex gap-2 mb-2">
               <div class="flex-1">
-                <label class="block text-gray-700 text-sm mb-0.5">Nom :</label>
+                <label class="block text-gray-700 text-sm mb-0.5">Nom <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   [(ngModel)]="nom"
@@ -28,7 +28,7 @@ import { AuthService } from '../../core/services/auth.service';
                 />
               </div>
               <div class="flex-1">
-                <label class="block text-gray-700 text-sm mb-0.5">Prénom :</label>
+                <label class="block text-gray-700 text-sm mb-0.5">Prénom <span class="text-red-500">*</span></label>
                 <input
                   type="text"
                   [(ngModel)]="prenom"
@@ -39,7 +39,7 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
             <!-- Row 2: Pseudo -->
             <div class="mb-2">
-              <label class="block text-gray-700 text-sm mb-0.5">Pseudo :</label>
+              <label class="block text-gray-700 text-sm mb-0.5">Pseudo <span class="text-red-500">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="login"
@@ -49,12 +49,13 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
             <!-- Row 3: Mot de passe -->
             <div class="mb-2">
-              <label class="block text-gray-700 text-sm mb-0.5">Mot de passe :</label>
+              <label class="block text-gray-700 text-sm mb-0.5">Mot de passe <span class="text-red-500">*</span></label>
               <input
                 type="password"
                 [(ngModel)]="mdp"
                 name="mdp"
-                class="w-full border border-gray-400 rounded px-2 py-0.5 text-sm focus:outline-none"
+                placeholder="Min. 8 car., majuscule, minuscule, chiffre, spécial"
+                class="w-full border border-gray-400 rounded px-2 py-0.5 text-sm focus:outline-none placeholder:text-gray-400 placeholder:text-xs"
               />
             </div>
             <!-- Row 4: Adresse -->
@@ -149,8 +150,24 @@ export class RegisterComponent implements OnInit {
       this.errorMsg = 'Le pseudo est requis.';
       return;
     }
-    if (this.mdp.length < 4) {
-      this.errorMsg = 'Le mot de passe doit contenir au moins 4 caractères.';
+    if (this.mdp.length < 8) {
+      this.errorMsg = 'Le mot de passe doit contenir au moins 8 caractères.';
+      return;
+    }
+    if (!/[a-z]/.test(this.mdp)) {
+      this.errorMsg = 'Le mot de passe doit contenir au moins une lettre minuscule.';
+      return;
+    }
+    if (!/[A-Z]/.test(this.mdp)) {
+      this.errorMsg = 'Le mot de passe doit contenir au moins une lettre majuscule.';
+      return;
+    }
+    if (!/[0-9]/.test(this.mdp)) {
+      this.errorMsg = 'Le mot de passe doit contenir au moins un chiffre.';
+      return;
+    }
+    if (!/[^a-zA-Z0-9]/.test(this.mdp)) {
+      this.errorMsg = 'Le mot de passe doit contenir au moins un caractère spécial.';
       return;
     }
     if (this.cp && !/^\d{5}$/.test(this.cp.trim())) {

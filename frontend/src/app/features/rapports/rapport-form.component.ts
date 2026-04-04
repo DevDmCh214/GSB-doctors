@@ -61,13 +61,13 @@ interface EchantillonLocal {
           <!-- Date + Motif row -->
           <div class="flex gap-4 mb-3">
             <div class="flex-1">
-              <p class="text-xs text-gray-400 mb-1">date</p>
+              <p class="text-xs text-gray-400 mb-1">date <span class="text-red-500">*</span></p>
               <input type="date"
                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-gray-400"
                      [(ngModel)]="formDate" />
             </div>
             <div class="flex-1">
-              <p class="text-xs text-gray-400 mb-1">motif</p>
+              <p class="text-xs text-gray-400 mb-1">motif <span class="text-red-500">*</span></p>
               <input type="text"
                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-gray-400"
                      [(ngModel)]="formMotif"
@@ -77,7 +77,7 @@ interface EchantillonLocal {
 
           <!-- Bilan -->
           <div class="mb-4">
-            <p class="text-xs text-gray-400 mb-1">bilan</p>
+            <p class="text-xs text-gray-400 mb-1">bilan <span class="text-red-500">*</span></p>
             <textarea
               class="w-full border border-gray-200 rounded-lg px-3 py-3 text-sm text-gray-700 focus:outline-none focus:border-gray-400 min-h-[80px] resize-none"
               [(ngModel)]="formBilan"
