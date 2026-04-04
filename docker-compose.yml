@@ -7,6 +7,7 @@ services:
       MYSQL_DATABASE: gsbrapports
       MYSQL_USER: gsb
       MYSQL_PASSWORD: gsb
+    command: --log-bin-trust-function-creators=1
     ports:
       - "3306:3306"
     volumes:

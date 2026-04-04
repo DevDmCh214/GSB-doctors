@@ -77,3 +77,20 @@ model visiteur {
   ticket       String?   @db.VarChar(50)
   rapport      rapport[]
 }
+
+model audit_log {
+  id          Int              @id @default(autoincrement())
+  created_at  DateTime         @default(now()) @db.DateTime(0)
+  id_visiteur String?          @db.Char(4)
+  table_name  String           @db.VarChar(30)
+  action      audit_log_action
+  record_id   String           @db.VarChar(50)
+  old_state   Json?
+  new_state   Json?
+}
+
+enum audit_log_action {
+  INSERT
+  UPDATE
+  DELETE
+}

@@ -37,6 +37,81 @@ async function main() {
   // Widen mdp column to CHAR(60) for bcrypt
   await connection.query('ALTER TABLE visiteur MODIFY mdp CHAR(60)')
 
+  // Create audit_log table
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      id_visiteur CHAR(4)      NULL,
+      table_name  VARCHAR(30)  NOT NULL,
+      action      ENUM('INSERT','UPDATE','DELETE') NOT NULL,
+      record_id   VARCHAR(50)  NOT NULL,
+      old_state   JSON         NULL,
+      new_state   JSON         NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `)
+
+  // Create triggers (each sent as a single statement to mysql2)
+  const triggers = [
+    // -- RAPPORT --
+    `CREATE TRIGGER trg_rapport_insert AFTER INSERT ON rapport FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES (NEW.idVisiteur, 'rapport', 'INSERT', CAST(NEW.id AS CHAR), NULL,
+       JSON_OBJECT('id', NEW.id, 'date', DATE_FORMAT(NEW.date,'%Y-%m-%d'), 'motif', NEW.motif, 'bilan', NEW.bilan, 'idVisiteur', NEW.idVisiteur, 'idMedecin', NEW.idMedecin))`,
+
+    `CREATE TRIGGER trg_rapport_update AFTER UPDATE ON rapport FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES (NEW.idVisiteur, 'rapport', 'UPDATE', CAST(NEW.id AS CHAR),
+       JSON_OBJECT('id', OLD.id, 'date', DATE_FORMAT(OLD.date,'%Y-%m-%d'), 'motif', OLD.motif, 'bilan', OLD.bilan, 'idVisiteur', OLD.idVisiteur, 'idMedecin', OLD.idMedecin),
+       JSON_OBJECT('id', NEW.id, 'date', DATE_FORMAT(NEW.date,'%Y-%m-%d'), 'motif', NEW.motif, 'bilan', NEW.bilan, 'idVisiteur', NEW.idVisiteur, 'idMedecin', NEW.idMedecin))`,
+
+    `CREATE TRIGGER trg_rapport_delete AFTER DELETE ON rapport FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES (OLD.idVisiteur, 'rapport', 'DELETE', CAST(OLD.id AS CHAR),
+       JSON_OBJECT('id', OLD.id, 'date', DATE_FORMAT(OLD.date,'%Y-%m-%d'), 'motif', OLD.motif, 'bilan', OLD.bilan, 'idVisiteur', OLD.idVisiteur, 'idMedecin', OLD.idMedecin), NULL)`,
+
+    // -- OFFRIR --
+    `CREATE TRIGGER trg_offrir_insert AFTER INSERT ON offrir FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES ((SELECT idVisiteur FROM rapport WHERE id = NEW.idRapport), 'offrir', 'INSERT',
+       CONCAT(NEW.idRapport, ':', NEW.idMedicament), NULL,
+       JSON_OBJECT('idRapport', NEW.idRapport, 'idMedicament', NEW.idMedicament, 'quantite', NEW.quantite))`,
+
+    `CREATE TRIGGER trg_offrir_delete AFTER DELETE ON offrir FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES ((SELECT idVisiteur FROM rapport WHERE id = OLD.idRapport), 'offrir', 'DELETE',
+       CONCAT(OLD.idRapport, ':', OLD.idMedicament),
+       JSON_OBJECT('idRapport', OLD.idRapport, 'idMedicament', OLD.idMedicament, 'quantite', OLD.quantite), NULL)`,
+
+    // -- MEDECIN --
+    `CREATE TRIGGER trg_medecin_update AFTER UPDATE ON medecin FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES (NULL, 'medecin', 'UPDATE', CAST(NEW.id AS CHAR),
+       JSON_OBJECT('id', OLD.id, 'nom', OLD.nom, 'prenom', OLD.prenom, 'adresse', OLD.adresse, 'tel', IFNULL(OLD.tel,''), 'specialitecomplementaire', IFNULL(OLD.specialitecomplementaire,''), 'departement', OLD.departement),
+       JSON_OBJECT('id', NEW.id, 'nom', NEW.nom, 'prenom', NEW.prenom, 'adresse', NEW.adresse, 'tel', IFNULL(NEW.tel,''), 'specialitecomplementaire', IFNULL(NEW.specialitecomplementaire,''), 'departement', NEW.departement))`,
+
+    `CREATE TRIGGER trg_medecin_delete AFTER DELETE ON medecin FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES (NULL, 'medecin', 'DELETE', CAST(OLD.id AS CHAR),
+       JSON_OBJECT('id', OLD.id, 'nom', OLD.nom, 'prenom', OLD.prenom, 'adresse', OLD.adresse, 'tel', IFNULL(OLD.tel,''), 'specialitecomplementaire', IFNULL(OLD.specialitecomplementaire,''), 'departement', OLD.departement), NULL)`,
+
+    // -- VISITEUR --
+    `CREATE TRIGGER trg_visiteur_insert AFTER INSERT ON visiteur FOR EACH ROW
+     INSERT INTO audit_log (id_visiteur, table_name, action, record_id, old_state, new_state)
+     VALUES (NEW.id, 'visiteur', 'INSERT', NEW.id, NULL,
+       JSON_OBJECT('id', NEW.id, 'nom', IFNULL(NEW.nom,''), 'prenom', IFNULL(NEW.prenom,''), 'login', IFNULL(NEW.login,''), 'adresse', IFNULL(NEW.adresse,''), 'cp', IFNULL(NEW.cp,''), 'ville', IFNULL(NEW.ville,'')))`,
+  ]
+
+  for (const trigger of triggers) {
+    try { await connection.query(trigger) } catch (err) {
+      // skip if trigger already exists
+      if (!err.message.includes('already exists')) {
+        console.warn('Trigger warning:', err.message.substring(0, 80))
+      }
+    }
+  }
+  console.log('✅ Audit log table and triggers created')
+
   // Per-user passwords
   const userPasswords = {
     aribiA:   'Gsb@2025!a',

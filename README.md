@@ -37,7 +37,7 @@ cd GSB-doctors
 
 ### 2. Lancer la base de données MySQL
 
-> VERIFIEZ QUE VOUS AVEZ LANCÉ DOCKER.
+> Vérifiez que vous avez lancé docker.
 
 ```bash
 docker-compose up -d
@@ -454,6 +454,7 @@ visiteur ──< rapport >── medecin
 | `medicament` | Catalogue des médicaments |
 | `famille` | Famille thérapeutique d'un médicament |
 | `offrir` | Table de jonction rapport ↔ médicament (avec quantité) |
+| `audit_log` | Journal d'audit automatique (via triggers MySQL) |
 
 ### Relations clés
 
@@ -461,6 +462,72 @@ visiteur ──< rapport >── medecin
 - Un `rapport` peut contenir **plusieurs** `medicament` via la table `offrir`
 - Un `medicament` appartient à **une** `famille`
 - La suppression d'un rapport supprime d'abord ses lignes `offrir` (transaction)
+
+---
+
+## Journal d'audit (audit_log)
+
+Toutes les modifications sur les tables `rapport`, `offrir`, `medecin` et `visiteur` sont automatiquement enregistrées via des **triggers MySQL** dans la table `audit_log`.
+
+### Structure de la table
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `id` | INT AUTO_INCREMENT | Identifiant unique de l'entrée |
+| `created_at` | DATETIME | Horodatage de l'action |
+| `id_visiteur` | CHAR(4) | Visiteur ayant effectué l'action (NULL pour les modifications médecin) |
+| `table_name` | VARCHAR(30) | Table concernée (`rapport`, `offrir`, `medecin`, `visiteur`) |
+| `action` | ENUM | Type d'action : `INSERT`, `UPDATE`, `DELETE` |
+| `record_id` | VARCHAR(50) | Clé primaire de l'enregistrement modifié |
+| `old_state` | JSON | État avant modification (NULL pour INSERT) |
+| `new_state` | JSON | État après modification (NULL pour DELETE) |
+
+### Triggers actifs
+
+| Trigger | Table | Événement |
+|---------|-------|-----------|
+| `trg_rapport_insert` | rapport | AFTER INSERT |
+| `trg_rapport_update` | rapport | AFTER UPDATE |
+| `trg_rapport_delete` | rapport | AFTER DELETE |
+| `trg_offrir_insert` | offrir | AFTER INSERT |
+| `trg_offrir_delete` | offrir | AFTER DELETE |
+| `trg_medecin_update` | medecin | AFTER UPDATE |
+| `trg_medecin_delete` | medecin | AFTER DELETE |
+| `trg_visiteur_insert` | visiteur | AFTER INSERT |
+
+### Accès à la table via Docker
+
+```bash
+# Ouvrir un shell MySQL dans le conteneur
+docker exec -it gsb-doctors-db-1 mysql -ugsb -pgsb gsbrapports
+
+# Voir tous les logs
+SELECT * FROM audit_log ORDER BY created_at DESC;
+
+# Filtrer par table
+SELECT * FROM audit_log WHERE table_name = 'rapport' ORDER BY created_at DESC;
+
+# Filtrer par visiteur
+SELECT * FROM audit_log WHERE id_visiteur = 'a131' ORDER BY created_at DESC;
+
+# Filtrer par action
+SELECT * FROM audit_log WHERE action = 'DELETE' ORDER BY created_at DESC;
+
+# Voir les détails JSON formatés
+SELECT id, created_at, id_visiteur, table_name, action, record_id,
+       JSON_PRETTY(old_state) AS ancien_etat,
+       JSON_PRETTY(new_state) AS nouvel_etat
+FROM audit_log ORDER BY created_at DESC LIMIT 10\G
+
+# Compter les actions par table
+SELECT table_name, action, COUNT(*) AS total
+FROM audit_log GROUP BY table_name, action ORDER BY table_name;
+
+# Vider le journal (attention : irréversible)
+DELETE FROM audit_log;
+```
+
+> **Note :** La table `audit_log` est créée automatiquement lors du seed (`node prisma/seed.js`). Le paramètre `log-bin-trust-function-creators=1` est activé dans `docker-compose.yml` pour permettre la création des triggers.
 
 ---
 
