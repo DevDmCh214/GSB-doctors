@@ -508,15 +508,36 @@ Les sessions côté serveur complètent l'authentification JWT pour permettre l'
 | `expires_at` | DATETIME | Date d'expiration (30 min après création) |
 | `is_active` | BOOLEAN | `true` = session valide, `false` = invalidée |
 
-### Exemples de requêtes SQL
+### Accès à la table via Docker
 
-```sql
--- Sessions actives d'un visiteur
+```bash
+# Ouvrir un shell MySQL dans le conteneur
+docker exec -it gsb-doctors-db-1 mysql -ugsb -pgsb gsbrapports
+
+# Voir toutes les sessions
+SELECT * FROM session ORDER BY created_at DESC;
+
+# Sessions actives d'un visiteur
 SELECT * FROM session WHERE id_visiteur = 'a131' AND is_active = TRUE AND expires_at > NOW();
 
--- Historique des sessions
-SELECT * FROM session ORDER BY created_at DESC LIMIT 20;
+# Historique des sessions avec détail visiteur
+SELECT s.id, s.ip_address, s.created_at, s.expires_at, s.is_active,
+       IFNULL(v.login, '(inconnu)') AS login
+FROM session s
+LEFT JOIN visiteur v ON s.id_visiteur = v.id
+ORDER BY s.created_at DESC LIMIT 20;
+
+# Sessions expirées encore marquées actives
+SELECT * FROM session WHERE is_active = TRUE AND expires_at < NOW();
+
+# Invalider toutes les sessions d'un visiteur
+UPDATE session SET is_active = FALSE WHERE id_visiteur = 'a131';
+
+# Purger les sessions expirées (attention : irréversible)
+DELETE FROM session WHERE is_active = FALSE;
 ```
+
+> **Note :** La table `session` est créée automatiquement lors du seed (`node prisma/seed.js`).
 
 ---
 
@@ -566,6 +587,40 @@ SELECT * FROM connexions WHERE id_visiteur = 'a131' ORDER BY attempted_at DESC;
 -- Ratio succès/échec global
 SELECT success, COUNT(*) AS total FROM connexions GROUP BY success;
 ```
+
+### Accès à la table via Docker
+
+```bash
+# Ouvrir un shell MySQL dans le conteneur
+docker exec -it gsb-doctors-db-1 mysql -ugsb -pgsb gsbrapports
+
+# Voir toutes les tentatives de connexion
+SELECT * FROM connexions ORDER BY attempted_at DESC;
+
+# Tentatives échouées par IP (dernières 24h)
+SELECT ip_address, COUNT(*) AS echecs
+FROM connexions
+WHERE success = FALSE AND attempted_at > NOW() - INTERVAL 24 HOUR
+GROUP BY ip_address ORDER BY echecs DESC;
+
+# Historique d'un visiteur
+SELECT * FROM connexions WHERE id_visiteur = 'a131' ORDER BY attempted_at DESC;
+
+# Ratio succès/échec global
+SELECT success, COUNT(*) AS total FROM connexions GROUP BY success;
+
+# Voir les tentatives récentes avec détail
+SELECT c.id, c.ip_address, c.attempted_at, c.success,
+       IFNULL(v.login, '(inconnu)') AS login
+FROM connexions c
+LEFT JOIN visiteur v ON c.id_visiteur = v.id
+ORDER BY c.attempted_at DESC LIMIT 20;
+
+# Vider la table (attention : irréversible)
+DELETE FROM connexions;
+```
+
+> **Note :** La table `connexions` est créée automatiquement lors du seed (`node prisma/seed.js`).
 
 ---
 
