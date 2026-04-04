@@ -106,6 +106,36 @@ ng serve
 
 ---
 
+## Tests
+
+### Backend (Jest + Supertest) — 33 tests
+
+```bash
+cd backend
+npm test
+```
+
+Tests couverts :
+- Authentification : login (identifiants invalides, valides), register (validations : nom, prénom, mdp, cp, login unique, longueur max)
+- Rapports : validation POST (champs requis, longueurs, date invalide, échantillons), GET detail (404, 403, 200), DELETE (404, 403)
+- Médecins : PATCH validation (adresse requise, trop longue, tel invalide, succès), DELETE (404, succès)
+- Middleware auth : 401 sans cookie, 401 avec token invalide
+- Health check
+
+### Frontend (Karma + Jasmine) — 15 tests
+
+```bash
+cd frontend
+ng test --watch=false --browsers=ChromeHeadless
+```
+
+Tests couverts :
+- AppComponent : création, rendu navbar
+- AuthService : état initial, login, logout, me, register (requêtes HTTP + état BehaviorSubject)
+- RapportService : getRapports, getRapportById, createRapport, deleteRapport, passage des paramètres de recherche
+
+---
+
 ## Identifiants de démonstration
 
 | Login | Mot de passe | Département | Notes |
