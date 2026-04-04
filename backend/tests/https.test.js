@@ -118,11 +118,12 @@ describe('Secure cookie flag', () => {
   it('should set secure flag on logout cookie clearing', async () => {
     const jwt = require('jsonwebtoken')
     const token = jwt.sign(
-      { id: 'ab00', nom: 'A', prenom: 'B', cp: '75001', sessionId: 'sess-id' },
+      { id: 'ab00', sessionId: 'sess-id' },
       process.env.JWT_SECRET || 'change_me_in_production'
     )
     prisma.session.findUnique.mockResolvedValue({
       id: 'sess-id', is_active: true, expires_at: new Date(Date.now() + 60000),
+      visiteur: { id: 'ab00', nom: 'A', prenom: 'B', cp: '75001' },
     })
     prisma.session.update.mockResolvedValue({})
 

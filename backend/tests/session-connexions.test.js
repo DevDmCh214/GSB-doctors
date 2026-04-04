@@ -27,7 +27,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change_me_in_production'
 
 function authCookie(sessionId = 'valid-session-id') {
   const token = jwt.sign(
-    { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001', sessionId },
+    { id: 'ab00', sessionId },
     JWT_SECRET
   )
   return `token=${token}`
@@ -119,6 +119,7 @@ describe('Session management', () => {
       id: 'valid-session-id',
       is_active: true,
       expires_at: new Date(Date.now() + 60000),
+      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
     })
 
     const res = await request(app)
@@ -134,6 +135,7 @@ describe('Session management', () => {
       id: 'valid-session-id',
       is_active: true,
       expires_at: new Date(Date.now() + 60000),
+      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
     })
     prisma.session.update.mockResolvedValue({})
 

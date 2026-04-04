@@ -12,7 +12,10 @@ jest.mock('../src/lib/prisma', () => ({
   rapport: { findMany: jest.fn(), deleteMany: jest.fn() },
   offrir: { deleteMany: jest.fn() },
   session: {
-    findUnique: jest.fn().mockResolvedValue(null),
+    findUnique: jest.fn().mockResolvedValue({
+      id: 'test-session', is_active: true, expires_at: new Date(Date.now() + 60000),
+      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
+    }),
     create: jest.fn(),
     update: jest.fn(),
   },
@@ -28,7 +31,7 @@ const app = require('../src/app')
 
 function authCookie() {
   const token = jwt.sign(
-    { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
+    { id: 'ab00', sessionId: 'test-session' },
     process.env.JWT_SECRET || 'change_me_in_production'
   )
   return `token=${token}`

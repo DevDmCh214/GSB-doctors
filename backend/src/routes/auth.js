@@ -23,8 +23,7 @@ function getClientIp(req) {
 }
 
 function signAndSetCookie(res, visiteur, sessionId) {
-  const payload = { id: visiteur.id, nom: visiteur.nom, prenom: visiteur.prenom, cp: visiteur.cp, sessionId }
-  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: `${SESSION_DURATION_MIN}m` })
+  const token = jwt.sign({ id: visiteur.id, sessionId }, process.env.JWT_SECRET, { expiresIn: `${SESSION_DURATION_MIN}m` })
   res.cookie('token', token, COOKIE_OPTIONS)
   return { id: visiteur.id, nom: visiteur.nom, prenom: visiteur.prenom, cp: visiteur.cp }
 }

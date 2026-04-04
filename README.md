@@ -208,7 +208,7 @@ GSB-doctors/
 │   ├── src/
 │   │   ├── index.js            # Point d'entrée HTTPS (charge les certificats, démarre le serveur)
 │   │   ├── middleware/
-│   │   │   └── auth.js         # Middleware JWT : vérifie le cookie, injecte req.visiteur
+│   │   │   └── auth.js         # Middleware JWT : vérifie la session, charge le visiteur depuis la base
 │   │   ├── lib/
 │   │   │   └── prisma.js       # Singleton Prisma Client
 │   │   └── routes/
@@ -266,6 +266,8 @@ GSB-doctors/
 Base URL : `https://localhost:3001`
 
 Toutes les routes protégées nécessitent un cookie JWT valide (`token`).  
+Le JWT ne contient que l'identifiant du visiteur et l'identifiant de session : `{ id, sessionId }`.  
+Les informations du visiteur (nom, prénom, cp) sont chargées côté serveur via la session.  
 Les erreurs retournent toujours : `{ "error": "Message en français" }` + code HTTP approprié.
 
 ---
@@ -515,8 +517,8 @@ Les sessions côté serveur complètent l'authentification JWT pour permettre l'
 
 ### Fonctionnement
 
-1. **Connexion** : un enregistrement `session` est créé avec un UUID. Cet UUID est inclus dans le payload du JWT.
-2. **Chaque requête authentifiée** : le middleware vérifie que la session est toujours active (`is_active = true`) et non expirée (`expires_at > NOW()`).
+1. **Connexion** : un enregistrement `session` est créé avec un UUID. Le JWT stocké en cookie ne contient que `{ id, sessionId }` — aucune donnée personnelle ne transite dans le token.
+2. **Chaque requête authentifiée** : le middleware vérifie que la session est active et non expirée, puis charge les informations du visiteur (nom, prénom, cp) depuis la base via la relation `session → visiteur`.
 3. **Déconnexion** : la session est marquée comme inactive (`is_active = false`), rendant le JWT immédiatement invalide.
 4. **Expiration** : toute session dont `expires_at` est dépassé est automatiquement rejetée et désactivée.
 
@@ -705,7 +707,7 @@ DELETE FROM audit_log;
 | HTTPS obligatoire (backend) | Le backend Express sert uniquement en HTTPS via certificat auto-signé. Les cookies sont marqués `Secure` et ne transitent jamais en clair |
 | Proxy Angular (`proxy.conf.json`) | Le frontend proxy les appels `/api` vers le backend HTTPS. Le navigateur ne voit pas le certificat auto-signé — aucune alerte de sécurité |
 | Certificats générés via script Node.js | `node certs/generate.js` génère les certificats sans outil externe (utilise openssl si disponible, sinon Node.js natif). Fonctionne sur Windows, macOS et Linux |
-| JWT en cookie httpOnly + session serveur | Le cookie httpOnly empêche l'accès au token via JavaScript (protection XSS). La session serveur permet l'invalidation immédiate au logout et l'expiration automatique après 30 min |
+| JWT minimal (`{ id, sessionId }`) en cookie httpOnly | Le token ne contient aucune donnée personnelle. Le cookie httpOnly empêche l'accès via JavaScript (protection XSS). Les informations du visiteur sont chargées côté serveur via la session |
 | Mots de passe hachés et salés (bcrypt) | Chaque mot de passe est salé individuellement par bcrypt avant stockage. Colonne `mdp` pour accueillir le hash |
 | Politique de mot de passe stricte | Min. 8 caractères, majuscule, minuscule, chiffre et caractère spécial — validé côté client et serveur |
 | Rate limiting par IP (table `connexions`) | Après 5 échecs de connexion en 30 s, l'IP est bloquée 30 s |
