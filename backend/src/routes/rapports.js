@@ -23,7 +23,7 @@ router.get('/', async (req, res, next) => {
     else if (sortMotif) orderBy = [{ motif: sortMotif }]
     else if (sortNom) orderBy = [{ medecin: { nom: sortNom } }]
 
-    const rapports = await prisma.rapport.findMany({
+    let rapports = await prisma.rapport.findMany({
       where,
       orderBy,
       select: {
@@ -33,6 +33,33 @@ router.get('/', async (req, res, next) => {
         medecin: { select: { id: true, nom: true, prenom: true } }
       }
     })
+
+    // If search contains date-like characters, also include rapports matching the formatted date
+    if (search && /[\d/]/.test(search)) {
+      const allRapports = await prisma.rapport.findMany({
+        where: { idVisiteur: req.visiteur.id },
+        orderBy,
+        select: {
+          id: true,
+          date: true,
+          motif: true,
+          medecin: { select: { id: true, nom: true, prenom: true } }
+        }
+      })
+      const searchLower = search.toLowerCase()
+      const dateMatched = allRapports.filter(r => {
+        if (!r.date) return false
+        const formatted = new Date(r.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        return formatted.includes(searchLower)
+      })
+      // Merge date-matched rapports into results (avoid duplicates)
+      const existingIds = new Set(rapports.map(r => r.id))
+      for (const r of dateMatched) {
+        if (!existingIds.has(r.id)) {
+          rapports.push(r)
+        }
+      }
+    }
 
     res.json({ rapports, count: rapports.length })
   } catch (err) {

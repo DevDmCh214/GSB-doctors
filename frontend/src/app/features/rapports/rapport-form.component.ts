@@ -390,7 +390,7 @@ export class RapportFormComponent implements OnInit, OnDestroy {
       this.rapportService.updateRapport(this.rapportId, payload).subscribe({
         next: (res) => {
           this.saving = false;
-          this.router.navigate(['/rapports', res.rapport.id]);
+          this.router.navigate(['/rapports', res.rapport.id], { replaceUrl: true });
         },
         error: (err) => {
           this.saving = false;
