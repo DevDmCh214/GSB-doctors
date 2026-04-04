@@ -37,22 +37,35 @@ async function main() {
   // Widen mdp column to CHAR(60) for bcrypt
   await connection.query('ALTER TABLE visiteur MODIFY mdp CHAR(60)')
 
-  // Generate bcrypt hash for "password"
-  const hash = await bcrypt.hash('password', 10)
+  // Per-user passwords
+  const userPasswords = {
+    aribiA:   'Gsb@2025!a',
+    ltusseau: 'Pharma#L8x',
+    fdaburon: 'Visite$F94',
+    fdudouit: 'Rapport&D7',
+  }
 
-  // Update all visiteurs with the same hash
-  await connection.query('UPDATE visiteur SET mdp = ?', [hash])
+  // Set specific passwords for demo users, fallback for the rest
+  const fallbackHash = await bcrypt.hash('Gsb_User!01', 10)
+  await connection.query('UPDATE visiteur SET mdp = ?', [fallbackHash])
+
+  for (const [login, pwd] of Object.entries(userPasswords)) {
+    const hash = await bcrypt.hash(pwd, 10)
+    await connection.query('UPDATE visiteur SET mdp = ? WHERE login = ?', [hash, login])
+  }
 
   await connection.end()
 
   // Print confirmation table
-  console.log('\n✅ Seed complete — all users have password: "password"\n')
-  console.log('login       | nom        | prenom')
-  console.log('------------|------------|--------')
-  console.log('aribiA      | Aribi      | Alain')
-  console.log('ltusseau    | Tusseau    | Louis')
-  console.log('fdaburon    | Daburon    | François')
-  console.log('fdudouit    | Dudouit    | Frédéric')
+  console.log('\n✅ Seed complete\n')
+  console.log('login       | mot de passe   | nom        | prenom')
+  console.log('------------|----------------|------------|--------')
+  console.log('aribiA      | Gsb@2025!a     | Aribi      | Alain')
+  console.log('ltusseau    | Pharma#L8x     | Tusseau    | Louis')
+  console.log('fdaburon    | Visite$F94     | Daburon    | François')
+  console.log('fdudouit    | Rapport&D7     | Dudouit    | Frédéric')
+  console.log('')
+  console.log('Tous les autres utilisateurs : Gsb_User!01')
 }
 
 main().catch(e => {

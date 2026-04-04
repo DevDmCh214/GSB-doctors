@@ -375,19 +375,17 @@ Seed script at `/backend/prisma/seed.js`:
 
 1. Run the full `gsbrapports.sql` dump to populate all tables
 2. Widen `visiteur.mdp` column to `CHAR(60)` via raw SQL before hashing
-3. Generate a single bcrypt hash of the string `"password"` (cost 10)
-4. Update every row in `visiteur` to use that same hash
+3. Assign unique bcrypt-hashed passwords per demo user (cost 10)
+4. Other users get a default password
 5. Print a credential table on completion
-
-**Every user's password after seeding: `password`**
 
 **Key demo credentials (from existing data):**
 
-| login        | password | Department | Notes                         |
-|--------------|----------|------------|-------------------------------|
-| aribiA       | password | 46         | Most rapports, best demo user |
-| ltusseau     | password | 46         | Active user, same dept        |
-| fdaburon     | password | 94         | Different department          |
-| fdudouit     | password | 23         | Another region                |
+| login        | password       | Department | Notes                         |
+|--------------|----------------|------------|-------------------------------|
+| aribiA       | `Gsb@2025!a`   | 46         | Most rapports, best demo user |
+| ltusseau     | `Pharma#L8x`   | 46         | Active user, same dept        |
+| fdaburon     | `Visite$F94`   | 94         | Different department          |
+| fdudouit     | `Rapport&D7`   | 23         | Another region                |
 
-Full login list is in the `visiteur` INSERT block of `gsbrapports.sql`. All use `password`.
+All other users: `Gsb_User!01`. Full login list is in the `visiteur` INSERT block of `gsbrapports.sql`.

@@ -63,6 +63,8 @@ PORT=3001
 
 ```bash
 # Introspection du schéma existant (pas de migration destructive)
+cd backend
+
 npx prisma db pull
 
 # Peupler la base avec les données de démonstration
@@ -72,11 +74,9 @@ node prisma/seed.js
 Le script `seed.js` :
 1. Charge le dump SQL complet (`/sql/sql.sql`) dans la base
 2. Élargit la colonne `visiteur.mdp` à `CHAR(60)` pour accueillir les hachages bcrypt
-3. Génère un unique hachage bcrypt du mot de passe `"password"` (coût 10)
-4. Met à jour tous les utilisateurs avec ce hachage
+3. Attribue un mot de passe unique à chaque utilisateur principal (voir tableau ci-dessous)
+4. Les autres utilisateurs reçoivent le mot de passe par défaut `Gsb_User!01`
 5. Affiche un tableau récapitulatif des identifiants
-
-> **Mot de passe universel après le seed : `password`**
 
 ### 5. Démarrer le backend
 
@@ -108,11 +108,12 @@ ng serve
 
 | Login | Mot de passe | Département | Notes |
 |-------|-------------|-------------|-------|
-| aribiA | password | 46 | Utilisateur principal, nombreux rapports |
-| ltusseau | password | 46 | Même département |
-| fdaburon | password | 94 | Département différent |
-| fdudouit | password | 23 | Autre région |
+| aribiA | `Gsb@2025!a` | 46 | Utilisateur principal, nombreux rapports |
+| ltusseau | `Pharma#L8x` | 46 | Même département |
+| fdaburon | `Visite$F94` | 94 | Département différent |
+| fdudouit | `Rapport&D7` | 23 | Autre région |
 
+> Tous les autres utilisateurs ont le mot de passe : `Gsb_User!01`  
 > La liste complète des logins se trouve dans le bloc `INSERT INTO visiteur` du fichier `sql/sql.sql`.
 
 ---
@@ -214,7 +215,7 @@ Connexion d'un visiteur. Pose le cookie httpOnly `token`.
 
 ```json
 // Corps de la requête
-{ "login": "aribiA", "mdp": "password" }
+{ "login": "aribiA", "mdp": "Gsb@2025!a" }
 
 // Réponse 200
 { "visiteur": { "id": "a131", "nom": "Arbi", "prenom": "Amélie", "cp": "46000" } }
