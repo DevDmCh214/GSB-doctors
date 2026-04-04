@@ -8,7 +8,7 @@ Application web de gestion des visites médicales pour les visiteurs pharmaceuti
 
 Les visiteurs médicaux utilisent cette application pour :
 
-- Consulter la liste complète des médecins et filtrer par département
+- Consulter la liste complète des médecins
 - Créer, modifier et supprimer des rapports de visite
 - Associer des échantillons de médicaments à chaque visite (avec quantités)
 - Accéder à un tableau de bord récapitulatif de leur activité
@@ -47,10 +47,10 @@ docker-compose up -d
 
 ```bash
 cd backend
-cp .env.example .env      # ajuster si besoin
 npm install
 ```
 
+Copier .env.exemple dans /backend et le rennomer en .env
 Variables d'environnement (`.env`) :
 
 ```env
@@ -446,28 +446,3 @@ visiteur ──< rapport >── medecin
 
 ---
 
-## Périmètre de l'application
-
-### Inclus
-- Authentification (connexion / inscription / déconnexion)
-- Tableau de bord personnel
-- Liste et recherche de médecins avec filtre département
-- Modal de détail médecin avec historique de visites
-- Création, modification, suppression de rapports
-- Gestion des échantillons (recherche, ajout, quantité)
-- Popup d'information détaillée sur un médicament
-
-### Hors périmètre
-- Réinitialisation de mot de passe
-- Gestion de fichiers ou d'images
-- Fonctionnalités temps réel
-- Tests automatisés
-- Contrôle d'accès par rôle (tous les visiteurs ont les mêmes droits)
-- Responsive mobile
-- Panneau d'administration
-
----
-
-## Données connues
-
-- Le filtre "Mon département" pour `aribiA` (CP `46000`) retourne 0 résultats car les médecins de la base de démonstration ont des numéros de département 1–9, pas 46. C'est une contrainte des données existantes, pas un bug du code.
