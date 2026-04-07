@@ -3,6 +3,14 @@ const prisma = require('../lib/prisma')
 
 const router = Router()
 
+// Block access for commercial users
+router.use((req, res, next) => {
+  if (req.visiteur.role === 'commercial') {
+    return res.status(403).json({ error: 'Accès réservé aux visiteurs' })
+  }
+  next()
+})
+
 // GET /api/rapports
 router.get('/', async (req, res, next) => {
   try {

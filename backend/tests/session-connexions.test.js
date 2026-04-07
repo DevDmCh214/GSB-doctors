@@ -119,7 +119,7 @@ describe('Session management', () => {
       id: 'valid-session-id',
       is_active: true,
       expires_at: new Date(Date.now() + 60000),
-      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
+      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001', role: 'visiteur' },
     })
 
     const res = await request(app)
@@ -135,7 +135,7 @@ describe('Session management', () => {
       id: 'valid-session-id',
       is_active: true,
       expires_at: new Date(Date.now() + 60000),
-      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
+      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001', role: 'visiteur' },
     })
     prisma.session.update.mockResolvedValue({})
 

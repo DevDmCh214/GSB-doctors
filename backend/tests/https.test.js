@@ -123,7 +123,7 @@ describe('Secure cookie flag', () => {
     )
     prisma.session.findUnique.mockResolvedValue({
       id: 'sess-id', is_active: true, expires_at: new Date(Date.now() + 60000),
-      visiteur: { id: 'ab00', nom: 'A', prenom: 'B', cp: '75001' },
+      visiteur: { id: 'ab00', nom: 'A', prenom: 'B', cp: '75001', role: 'visiteur' },
     })
     prisma.session.update.mockResolvedValue({})
 

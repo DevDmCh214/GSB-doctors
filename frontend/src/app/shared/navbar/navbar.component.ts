@@ -10,8 +10,15 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <nav class="navbar">
       <div class="navbar-left">
-        <a routerLink="/" class="nav-link">dashboard</a>
-        <a routerLink="/medecins" class="nav-link">liste de medecins</a>
+        <ng-container *ngIf="auth.visiteur$ | async as visiteur">
+          <ng-container *ngIf="visiteur.role !== 'commercial'">
+            <a routerLink="/" class="nav-link">dashboard</a>
+            <a routerLink="/medecins" class="nav-link">liste de medecins</a>
+          </ng-container>
+          <ng-container *ngIf="visiteur.role === 'commercial'">
+            <a routerLink="/dashboard-commercial" class="nav-link">dashboard commercial</a>
+          </ng-container>
+        </ng-container>
       </div>
 
       <div class="navbar-center">

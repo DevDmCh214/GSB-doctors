@@ -8,6 +8,7 @@ const medecinRouter = require('./routes/medecins')
 const rapportRouter = require('./routes/rapports')
 const medicamentRouter = require('./routes/medicaments')
 const dashboardRouter = require('./routes/dashboard')
+const commercialRouter = require('./routes/commercial')
 const authMiddleware = require('./middleware/auth')
 
 const app = express()
@@ -25,6 +26,7 @@ app.use('/api/medecins',    authMiddleware, medecinRouter)
 app.use('/api/rapports',    authMiddleware, rapportRouter)
 app.use('/api/medicaments', authMiddleware, medicamentRouter)
 app.use('/api/dashboard',   authMiddleware, dashboardRouter)
+app.use('/api/commercial',  authMiddleware, commercialRouter)
 
 app.use((err, req, res, next) => {
   console.error(err)

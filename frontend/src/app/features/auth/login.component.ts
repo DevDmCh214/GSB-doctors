@@ -68,7 +68,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.auth.isLoggedIn()) {
-      this.router.navigate(['/']);
+      this.router.navigate([this.auth.isCommercial() ? '/dashboard-commercial' : '/']);
     }
   }
 
@@ -81,7 +81,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.errorMsg = '';
     this.loading = true;
     this.auth.login(this.login, this.mdp).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: (visiteur) => this.router.navigate([visiteur.role === 'commercial' ? '/dashboard-commercial' : '/']),
       error: (err) => {
         this.loading = false;
         if (err.status === 429 && err.error?.remainingSeconds) {

@@ -37,7 +37,7 @@ describe('POST /api/auth/login', () => {
 
   it('should return 401 if password is wrong', async () => {
     const hash = await bcrypt.hash('correct', 10)
-    prisma.visiteur.findFirst.mockResolvedValue({ id: 'ab00', nom: 'A', prenom: 'B', mdp: hash, cp: '75001' })
+    prisma.visiteur.findFirst.mockResolvedValue({ id: 'ab00', nom: 'A', prenom: 'B', mdp: hash, cp: '75001', role: 'visiteur' })
     const res = await request(app)
       .post('/api/auth/login')
       .send({ login: 'user', mdp: 'wrong' })
@@ -47,7 +47,7 @@ describe('POST /api/auth/login', () => {
 
   it('should return 200 and set cookie on valid login', async () => {
     const hash = await bcrypt.hash('correct', 10)
-    prisma.visiteur.findFirst.mockResolvedValue({ id: 'ab00', nom: 'A', prenom: 'B', mdp: hash, cp: '75001' })
+    prisma.visiteur.findFirst.mockResolvedValue({ id: 'ab00', nom: 'A', prenom: 'B', mdp: hash, cp: '75001', role: 'visiteur' })
     prisma.session.create.mockResolvedValue({ id: 'test-session-id' })
     const res = await request(app)
       .post('/api/auth/login')

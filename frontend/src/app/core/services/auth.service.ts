@@ -8,6 +8,7 @@ export interface Visiteur {
   nom: string;
   prenom: string;
   cp: string;
+  role: string;
 }
 
 export interface RegisterData {
@@ -31,6 +32,10 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this._visiteur$.value !== null;
+  }
+
+  isCommercial(): boolean {
+    return this._visiteur$.value?.role === 'commercial';
   }
 
   currentVisiteur(): Visiteur | null {

@@ -23,7 +23,7 @@ module.exports = async function auth(req, res, next) {
         return res.status(401).json({ error: 'Session expirée' })
       }
       const v = session.visiteur
-      req.visiteur = { id: v.id, nom: v.nom, prenom: v.prenom, cp: v.cp }
+      req.visiteur = { id: v.id, nom: v.nom, prenom: v.prenom, cp: v.cp, role: v.role || 'visiteur' }
     } else {
       // Legacy token without sessionId — reject
       return res.status(401).json({ error: 'Non authentifié' })

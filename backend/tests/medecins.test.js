@@ -14,7 +14,7 @@ jest.mock('../src/lib/prisma', () => ({
   session: {
     findUnique: jest.fn().mockResolvedValue({
       id: 'test-session', is_active: true, expires_at: new Date(Date.now() + 60000),
-      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001' },
+      visiteur: { id: 'ab00', nom: 'Test', prenom: 'User', cp: '75001', role: 'visiteur' },
     }),
     create: jest.fn(),
     update: jest.fn(),

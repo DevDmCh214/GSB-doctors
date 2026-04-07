@@ -75,6 +75,7 @@ model visiteur {
   dateEmbauche DateTime? @db.Date
   timespan     BigInt
   ticket       String?   @db.VarChar(50)
+  role         String    @default("visiteur") @db.VarChar(20)
   rapport      rapport[]
   session      session[]
   connexions   connexions[]

@@ -37,6 +37,18 @@ async function main() {
   // Widen mdp column to CHAR(60) for bcrypt
   await connection.query('ALTER TABLE visiteur MODIFY mdp CHAR(60)')
 
+  // Add role column if it doesn't exist
+  try {
+    await connection.query("ALTER TABLE visiteur ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'visiteur'")
+    console.log('✅ Column role added to visiteur')
+  } catch (err) {
+    if (err.code === 'ER_DUP_FIELDNAME' || err.message.includes('Duplicate column')) {
+      console.log('✅ Column role already exists')
+    } else {
+      throw err
+    }
+  }
+
   // Create audit_log table
   await connection.query(`
     CREATE TABLE IF NOT EXISTS audit_log (
@@ -191,18 +203,43 @@ async function main() {
     await connection.query('UPDATE visiteur SET mdp = ? WHERE login = ?', [hash, login])
   }
 
+  // Insert commercial demo users
+  const commercialUsers = [
+    { id: 'sc01', nom: 'Durand', prenom: 'Sophie', login: 'sdurand', mdp: 'Gsb@Comm01!' },
+    { id: 'sc02', nom: 'Leroy', prenom: 'Marc', login: 'mleroy', mdp: 'Gsb@Comm02!' },
+  ]
+  for (const u of commercialUsers) {
+    const hash = await bcrypt.hash(u.mdp, 10)
+    try {
+      await connection.query(
+        `INSERT INTO visiteur (id, nom, prenom, login, mdp, adresse, cp, ville, dateEmbauche, timespan, role)
+         VALUES (?, ?, ?, ?, ?, NULL, NULL, NULL, CURDATE(), 0, 'commercial')`,
+        [u.id, u.nom, u.prenom, u.login, hash]
+      )
+    } catch (err) {
+      if (err.code === 'ER_DUP_ENTRY') {
+        await connection.query('UPDATE visiteur SET mdp = ?, role = ? WHERE id = ?', [hash, 'commercial', u.id])
+      } else {
+        throw err
+      }
+    }
+  }
+  console.log('✅ Commercial users created')
+
   await connection.end()
 
   // Print confirmation table
   console.log('\n✅ Seed complete\n')
-  console.log('login       | mot de passe   | nom        | prenom')
-  console.log('------------|----------------|------------|--------')
-  console.log('aribiA      | Gsb@2025!a     | Aribi      | Alain')
-  console.log('ltusseau    | Pharma#L8x     | Tusseau    | Louis')
-  console.log('fdaburon    | Visite$F94     | Daburon    | François')
-  console.log('fdudouit    | Rapport&D7     | Dudouit    | Frédéric')
+  console.log('login       | mot de passe   | nom        | prenom     | role')
+  console.log('------------|----------------|------------|------------|------------')
+  console.log('aribiA      | Gsb@2025!a     | Aribi      | Alain      | visiteur')
+  console.log('ltusseau    | Pharma#L8x     | Tusseau    | Louis      | visiteur')
+  console.log('fdaburon    | Visite$F94     | Daburon    | François   | visiteur')
+  console.log('fdudouit    | Rapport&D7     | Dudouit    | Frédéric   | visiteur')
+  console.log('sdurand     | Gsb@Comm01!    | Durand     | Sophie     | commercial')
+  console.log('mleroy      | Gsb@Comm02!    | Leroy      | Marc       | commercial')
   console.log('')
-  console.log('Tous les autres utilisateurs : Gsb_User!01')
+  console.log('Tous les autres visiteurs : Gsb_User!01')
 }
 
 main().catch(e => {

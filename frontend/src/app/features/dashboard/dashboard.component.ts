@@ -6,6 +6,7 @@ import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { DashboardService, MedecinSuivi, RapportSummary } from '../../core/services/dashboard.service';
 import { RapportService } from '../../core/services/rapport.service';
+import { AuthService } from '../../core/services/auth.service';
 import { DoctorDetailModalComponent } from '../medecins/doctor-detail-modal.component';
 
 type SortField = 'date' | 'nom' | 'motif';
@@ -111,6 +112,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private dashboardService = inject(DashboardService);
   private rapportService = inject(RapportService);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   // Left panel state
   loading = false;
@@ -133,6 +135,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private searchSub?: Subscription;
 
   ngOnInit() {
+    if (this.auth.isCommercial()) {
+      this.router.navigate(['/dashboard-commercial']);
+      return;
+    }
     this.loading = true;
     this.dashboardService.getDashboard().subscribe({
       next: data => {
